@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/* TV focus styles */
+@media (min-width: 1920px) {
+  :focus-visible {
+    outline: 3px solid #E50914;
+    outline-offset: 4px;
+    border-radius: 6px;
+  }
+}
