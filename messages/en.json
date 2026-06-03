@@ -31,6 +31,14 @@
     "seasonCount": "{count, plural, one {# Season} other {# Seasons}}",
     "episodeCount": "{count, plural, one {# Episode} other {# Episodes}}"
   },
+  "classics": {
+    "rowTitle": "Classic Films",
+    "watchNow": "Watch Free",
+    "freeLabel": "FREE",
+    "publicDomain": "Public Domain",
+    "director": "Director",
+    "source": "Source: Internet Archive"
+  },
   "search": {
     "placeholder": "Search movies, series, anime...",
     "noResults": "No results found",

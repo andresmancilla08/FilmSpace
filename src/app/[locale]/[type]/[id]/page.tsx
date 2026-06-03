@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getMovieDetail, getTVDetail } from "@/lib/tmdb";
+import { getAnimeDetail } from "@/lib/anilist";
 import { DetailPage } from "@/components/media/detail/DetailPage";
 import { FEATURED, TRENDING, NEW_SERIES, ANIME_PICKS } from "@/lib/mockData";
 import type { ContentType, MediaDetail } from "@/types";
@@ -19,6 +20,7 @@ async function getDetail(type: string, id: number): Promise<MediaDetail | null> 
 
   try {
     if (contentType === "movie") return await getMovieDetail(id);
+    if (contentType === "anime") return await getAnimeDetail(id);
     return await getTVDetail(id, contentType);
   } catch {
     return null;
