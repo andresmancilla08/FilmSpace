@@ -5,6 +5,7 @@ import { IconSearch, IconUser } from "@tabler/icons-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { useScrolled } from "@/hooks/useScrolled";
+import { LanguageSelector } from "./LanguageSelector";
 import type { ContentType } from "@/types";
 
 type Tab = ContentType | "all";
@@ -57,7 +58,9 @@ export function Navbar() {
           ))}
         </div>
 
-        <div className="ml-auto flex items-center gap-1">
+        <div className="ml-auto flex items-center gap-2">
+          <LanguageSelector />
+
           <button
             className={cn(
               "rounded-full p-2 text-white/60 transition-colors duration-150",
