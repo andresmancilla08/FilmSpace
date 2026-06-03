@@ -29,3 +29,16 @@ body {
     border-radius: 6px;
   }
 }
+
+/* Hide scrollbars globally on scroll containers */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
