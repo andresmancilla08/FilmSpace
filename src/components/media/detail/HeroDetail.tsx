@@ -202,7 +202,8 @@ export function HeroDetail({ media, onTrailerClick }: HeroDetailProps) {
 
           {/* CTAs */}
           <motion.div {...item(0.24)} className="flex gap-3">
-            <button
+            <Link
+              href={`/${locale}/watch/${media.id}?type=${media.type}`}
               className={cn(
                 "flex items-center gap-2 rounded-xl bg-primary px-7 py-3.5 text-sm font-bold text-white",
                 "transition-all duration-150 hover:bg-primary/90 active:scale-[0.97]",
@@ -212,7 +213,7 @@ export function HeroDetail({ media, onTrailerClick }: HeroDetailProps) {
             >
               <IconPlayerPlayFilled size={18} />
               {t("play")}
-            </button>
+            </Link>
             {media.trailer && (
               <button
                 onClick={onTrailerClick}

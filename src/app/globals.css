@@ -36,6 +36,12 @@ body {
   display: none;
 }
 
+/* Auth poster mosaic scroll animation */
+@keyframes scrollPoster {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-50%); }
+}
+
 /* Respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

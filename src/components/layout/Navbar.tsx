@@ -5,6 +5,7 @@ import { IconSearch, IconUser } from "@tabler/icons-react";
 import { useTranslations, useLocale } from "next-intl";
 import { cn } from "@/lib/utils";
 import { useScrolled } from "@/hooks/useScrolled";
+import { useAuth } from "@/context/AuthContext";
 import { LanguageSelector } from "./LanguageSelector";
 import type { ContentType } from "@/types";
 
@@ -14,6 +15,7 @@ export function Navbar() {
   const t = useTranslations("nav");
   const locale = useLocale();
   const scrolled = useScrolled();
+  const { user } = useAuth();
   const [active, setActive] = useState<Tab>("all");
 
   const TABS: { label: string; value: Tab }[] = [
@@ -73,16 +75,18 @@ export function Navbar() {
             <IconSearch size={20} />
           </Link>
 
-          <button
+          <Link
+            href={user ? `/${locale}/profile` : `/${locale}/auth`}
             className={cn(
               "rounded-full p-2 text-white/60 transition-colors duration-150",
               "hover:bg-white/10 hover:text-white",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+              user && "text-primary/80"
             )}
             aria-label={t("profileLabel")}
           >
             <IconUser size={20} />
-          </button>
+          </Link>
         </div>
       </nav>
     </header>

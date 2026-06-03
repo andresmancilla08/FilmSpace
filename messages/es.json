@@ -41,5 +41,46 @@
     "filterMovies": "Películas",
     "filterSeries": "Series",
     "filterAnime": "Anime"
+  },
+  "auth": {
+    "signIn": "Iniciar sesión",
+    "createAccount": "Crear cuenta",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "name": "Nombre completo",
+    "loading": "Por favor espera...",
+    "error": "Algo salió mal. Inténtalo de nuevo.",
+    "nameRequired": "El nombre es obligatorio",
+    "demoNote": "Modo demo — cualquier credencial funciona",
+    "tagline": "Tu universo de historias"
+  },
+  "player": {
+    "back": "Volver",
+    "play": "Reproducir",
+    "pause": "Pausar",
+    "mute": "Silenciar",
+    "unmute": "Activar sonido",
+    "fullscreen": "Pantalla completa",
+    "exitFullscreen": "Salir de pantalla completa",
+    "loading": "Cargando...",
+    "demoNote": "Contenido demo — Big Buck Bunny",
+    "seekForward": "+10s",
+    "seekBack": "-10s"
+  },
+  "profile": {
+    "title": "Perfil",
+    "signOut": "Cerrar sesión",
+    "editProfile": "Editar perfil",
+    "memberSince": "Miembro desde",
+    "moviesWatched": "Películas",
+    "hoursWatched": "Horas",
+    "myList": "Mi lista",
+    "settings": "Configuración",
+    "noHistory": "Tu historial aparecerá aquí",
+    "continueWatching": "Continuar viendo",
+    "notLoggedIn": "Inicia sesión para ver tu perfil",
+    "goToSignIn": "Iniciar sesión",
+    "welcomeBack": "Bienvenido de nuevo",
+    "browseContent": "Explorar contenido"
   }
 }

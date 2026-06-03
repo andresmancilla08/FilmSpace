@@ -1,8 +1,9 @@
 "use client";
 import Image from "next/image";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { IconPlayerPlayFilled, IconInfoCircle, IconStarFilled } from "@tabler/icons-react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { cn } from "@/lib/utils";
 import type { Media } from "@/types";
 
@@ -23,6 +24,7 @@ function item(delay: number) {
 export function HeroFeatured({ media }: HeroFeaturedProps) {
   const t = useTranslations("hero");
   const tc = useTranslations("content");
+  const locale = useLocale();
 
   return (
     <section className="relative h-[85vh] min-h-[520px] w-full overflow-hidden tv:h-screen">
@@ -77,7 +79,8 @@ export function HeroFeatured({ media }: HeroFeaturedProps) {
           </motion.p>
 
           <motion.div {...item(0.23)} className="flex gap-3">
-            <button
+            <Link
+              href={`/${locale}/watch/${media.id}?type=${media.type}`}
               className={cn(
                 "flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-white",
                 "transition-all duration-150 hover:bg-primary/90 active:scale-[0.97]",
@@ -87,7 +90,7 @@ export function HeroFeatured({ media }: HeroFeaturedProps) {
             >
               <IconPlayerPlayFilled size={18} />
               {t("play")}
-            </button>
+            </Link>
             <button
               className={cn(
                 "flex items-center gap-2 rounded-lg border border-white/25 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur-sm",

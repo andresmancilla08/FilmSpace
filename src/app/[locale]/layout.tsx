@@ -4,6 +4,8 @@ import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing, type Locale } from "@/i18n/routing";
+import { AuthProvider } from "@/context/AuthContext";
+import { TVNavigation } from "@/components/tv/TVNavigation";
 import "../globals.css";
 
 const montserrat = Montserrat({
@@ -37,7 +39,10 @@ export default async function LocaleLayout({
     <html lang={locale} className="dark">
       <body className={`${montserrat.variable} font-sans antialiased bg-[#0a0a0a] text-white`}>
         <NextIntlClientProvider messages={messages}>
-          {children}
+          <AuthProvider>
+            <TVNavigation />
+            {children}
+          </AuthProvider>
         </NextIntlClientProvider>
       </body>
     </html>
