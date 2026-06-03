@@ -21,5 +21,14 @@
     "movie": "Película",
     "series": "Serie",
     "anime": "Anime"
+  },
+  "detail": {
+    "back": "Volver",
+    "play": "Reproducir",
+    "trailer": "Ver tráiler",
+    "cast": "Reparto",
+    "similar": "También te puede gustar",
+    "seasonCount": "{count, plural, one {# temporada} other {# temporadas}}",
+    "episodeCount": "{count, plural, one {# episodio} other {# episodios}}"
   }
 }

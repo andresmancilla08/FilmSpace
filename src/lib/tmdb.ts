@@ -1,4 +1,4 @@
-import type { Media, ContentType } from "@/types";
+import type { Media, ContentType, CastMember, MediaDetail } from "@/types";
 
 const BASE = "https://api.themoviedb.org/3";
 const IMG = "https://image.tmdb.org/t/p";
@@ -27,6 +27,44 @@ interface TMDBResponse {
   results: TMDBItem[];
 }
 
+interface TMDBGenre { id: number; name: string }
+interface TMDBCastMember { id: number; name: string; character: string; profile_path: string | null }
+interface TMDBVideo { key: string; site: string; type: string; official?: boolean }
+
+interface TMDBMovieDetail {
+  id: number;
+  title: string;
+  poster_path: string | null;
+  backdrop_path: string | null;
+  overview: string;
+  vote_average: number;
+  release_date: string;
+  genres: TMDBGenre[];
+  tagline: string;
+  runtime: number | null;
+  credits: { cast: TMDBCastMember[] };
+  videos: { results: TMDBVideo[] };
+  similar: { results: TMDBItem[] };
+}
+
+interface TMDBTVDetail {
+  id: number;
+  name: string;
+  poster_path: string | null;
+  backdrop_path: string | null;
+  overview: string;
+  vote_average: number;
+  first_air_date: string;
+  genres: TMDBGenre[];
+  tagline: string;
+  number_of_seasons: number;
+  number_of_episodes: number;
+  episode_run_time: number[];
+  credits: { cast: TMDBCastMember[] };
+  videos: { results: TMDBVideo[] };
+  similar: { results: TMDBItem[] };
+}
+
 function headers() {
   return {
     Authorization: `Bearer ${process.env.TMDB_READ_TOKEN}`,
@@ -48,18 +86,16 @@ async function get<T>(path: string, params?: Record<string, string>): Promise<T>
 function toMedia(item: TMDBItem, type: ContentType): Media {
   const dateStr = item.release_date ?? item.first_air_date ?? "2024-01-01";
   const year = new Date(dateStr).getFullYear();
-  const seed = item.id;
-
   return {
     id: item.id,
     title: item.title ?? item.name ?? "Unknown",
     type,
     poster: item.poster_path
       ? `${IMG}/w500${item.poster_path}`
-      : `https://picsum.photos/seed/${seed}/500/750`,
+      : `https://picsum.photos/seed/${item.id}/500/750`,
     backdrop: item.backdrop_path
       ? `${IMG}/w1280${item.backdrop_path}`
-      : `https://picsum.photos/seed/${seed}bg/1920/1080`,
+      : `https://picsum.photos/seed/${item.id}bg/1920/1080`,
     overview: item.overview,
     rating: Math.round(item.vote_average * 10) / 10,
     year,
@@ -69,6 +105,57 @@ function toMedia(item: TMDBItem, type: ContentType): Media {
       .filter(Boolean),
   };
 }
+
+function findTrailer(videos: TMDBVideo[]): string | null {
+  return (
+    videos.find((v) => v.type === "Trailer" && v.site === "YouTube" && v.official)?.key ??
+    videos.find((v) => v.type === "Trailer" && v.site === "YouTube")?.key ??
+    null
+  );
+}
+
+function toMediaDetail(
+  item: TMDBMovieDetail | TMDBTVDetail,
+  type: ContentType
+): MediaDetail {
+  const isTV = type !== "movie";
+  const tv = item as TMDBTVDetail;
+  const movie = item as TMDBMovieDetail;
+  const dateStr = isTV ? tv.first_air_date : movie.release_date;
+  const year = new Date(dateStr ?? "2024-01-01").getFullYear();
+
+  const cast: CastMember[] = item.credits.cast.slice(0, 8).map((c) => ({
+    id: c.id,
+    name: c.name,
+    character: c.character,
+    profile: c.profile_path ? `${IMG}/w185${c.profile_path}` : null,
+  }));
+
+  return {
+    id: item.id,
+    title: isTV ? tv.name : movie.title,
+    type,
+    poster: item.poster_path
+      ? `${IMG}/w500${item.poster_path}`
+      : `https://picsum.photos/seed/${item.id}/500/750`,
+    backdrop: item.backdrop_path
+      ? `${IMG}/w1280${item.backdrop_path}`
+      : `https://picsum.photos/seed/${item.id}bg/1920/1080`,
+    overview: item.overview,
+    rating: Math.round(item.vote_average * 10) / 10,
+    year,
+    genres: item.genres.slice(0, 3).map((g) => g.name),
+    tagline: item.tagline || undefined,
+    runtime: isTV ? (tv.episode_run_time?.[0] ?? undefined) : (movie.runtime ?? undefined),
+    seasons: isTV ? tv.number_of_seasons : undefined,
+    episodes: isTV ? tv.number_of_episodes : undefined,
+    cast,
+    trailer: findTrailer(item.videos.results),
+    similar: item.similar.results.slice(0, 6).map((s) => toMedia(s, type)),
+  };
+}
+
+// ── Catalog endpoints ──────────────────────────────────
 
 export async function getFeatured(): Promise<Media> {
   const data = await get<TMDBResponse>("/trending/movie/week");
@@ -97,4 +184,23 @@ export async function getPopularAnime(): Promise<Media[]> {
     "vote_count.gte": "200",
   });
   return data.results.slice(0, 8).map((i) => toMedia(i, "anime"));
+}
+
+// ── Detail endpoints ───────────────────────────────────
+
+export async function getMovieDetail(id: number): Promise<MediaDetail> {
+  const data = await get<TMDBMovieDetail>(`/movie/${id}`, {
+    append_to_response: "credits,videos,similar",
+  });
+  return toMediaDetail(data, "movie");
+}
+
+export async function getTVDetail(
+  id: number,
+  type: ContentType = "series"
+): Promise<MediaDetail> {
+  const data = await get<TMDBTVDetail>(`/tv/${id}`, {
+    append_to_response: "credits,videos,similar",
+  });
+  return toMediaDetail(data, type);
 }

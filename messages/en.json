@@ -21,5 +21,14 @@
     "movie": "Movie",
     "series": "Series",
     "anime": "Anime"
+  },
+  "detail": {
+    "back": "Back",
+    "play": "Play Now",
+    "trailer": "Watch Trailer",
+    "cast": "Cast",
+    "similar": "More Like This",
+    "seasonCount": "{count, plural, one {# Season} other {# Seasons}}",
+    "episodeCount": "{count, plural, one {# Episode} other {# Episodes}}"
   }
 }
