@@ -1,0 +1,25 @@
+{
+  "nav": {
+    "all": "All",
+    "movies": "Movies",
+    "series": "Series",
+    "anime": "Anime",
+    "searchLabel": "Search",
+    "profileLabel": "Profile"
+  },
+  "hero": {
+    "play": "Play",
+    "moreInfo": "More Info"
+  },
+  "home": {
+    "trendingNow": "Trending Now",
+    "popularSeries": "Popular Series",
+    "animePicks": "Anime Picks",
+    "seeAll": "See all"
+  },
+  "content": {
+    "movie": "Movie",
+    "series": "Series",
+    "anime": "Anime"
+  }
+}

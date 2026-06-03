@@ -2,22 +2,24 @@
 import Link from "next/link";
 import { useState } from "react";
 import { IconSearch, IconUser } from "@tabler/icons-react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { useScrolled } from "@/hooks/useScrolled";
 import type { ContentType } from "@/types";
 
 type Tab = ContentType | "all";
 
-const TABS: { label: string; value: Tab }[] = [
-  { label: "All", value: "all" },
-  { label: "Movies", value: "movie" },
-  { label: "Series", value: "series" },
-  { label: "Anime", value: "anime" },
-];
-
 export function Navbar() {
+  const t = useTranslations("nav");
   const scrolled = useScrolled();
   const [active, setActive] = useState<Tab>("all");
+
+  const TABS: { label: string; value: Tab }[] = [
+    { label: t("all"), value: "all" },
+    { label: t("movies"), value: "movie" },
+    { label: t("series"), value: "series" },
+    { label: t("anime"), value: "anime" },
+  ];
 
   return (
     <header
@@ -62,7 +64,7 @@ export function Navbar() {
               "hover:bg-white/10 hover:text-white",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             )}
-            aria-label="Search"
+            aria-label={t("searchLabel")}
           >
             <IconSearch size={20} />
           </button>
@@ -72,7 +74,7 @@ export function Navbar() {
               "hover:bg-white/10 hover:text-white",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             )}
-            aria-label="Profile"
+            aria-label={t("profileLabel")}
           >
             <IconUser size={20} />
           </button>

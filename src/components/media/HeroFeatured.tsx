@@ -2,6 +2,7 @@
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { IconPlayerPlayFilled, IconInfoCircle, IconStarFilled } from "@tabler/icons-react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import type { Media } from "@/types";
 
@@ -20,9 +21,11 @@ function item(delay: number) {
 }
 
 export function HeroFeatured({ media }: HeroFeaturedProps) {
+  const t = useTranslations("hero");
+  const tc = useTranslations("content");
+
   return (
     <section className="relative h-[85vh] min-h-[520px] w-full overflow-hidden tv:h-screen">
-      {/* Backdrop */}
       <Image
         src={media.backdrop}
         alt={media.title}
@@ -32,17 +35,14 @@ export function HeroFeatured({ media }: HeroFeaturedProps) {
         className="object-cover"
       />
 
-      {/* Gradient overlays */}
       <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/30 to-transparent" />
       <div className="absolute inset-0 bg-gradient-to-r from-[#0a0a0a]/85 via-[#0a0a0a]/25 to-transparent" />
 
-      {/* Content */}
       <div className="absolute inset-0 flex flex-col justify-end px-6 pb-20 md:px-12 md:pb-24 tv:px-24 tv:pb-32">
         <div className="max-w-xl tv:max-w-3xl">
-          {/* Badge row */}
           <motion.div {...item(0)} className="mb-3 flex items-center gap-2.5">
             <span className="rounded-sm bg-primary px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-white">
-              {media.type}
+              {tc(media.type)}
             </span>
             <span className="flex items-center gap-1 text-sm text-white/70">
               <IconStarFilled size={13} className="text-yellow-400" />
@@ -51,7 +51,6 @@ export function HeroFeatured({ media }: HeroFeaturedProps) {
             <span className="text-sm text-white/45">{media.year}</span>
           </motion.div>
 
-          {/* Title */}
           <motion.h1
             {...item(0.08)}
             className="mb-3 text-4xl font-bold leading-tight tracking-tight text-white md:text-6xl tv:text-7xl"
@@ -59,7 +58,6 @@ export function HeroFeatured({ media }: HeroFeaturedProps) {
             {media.title}
           </motion.h1>
 
-          {/* Genres */}
           <motion.div {...item(0.14)} className="mb-4 flex flex-wrap gap-2">
             {media.genres.map((genre) => (
               <span
@@ -71,7 +69,6 @@ export function HeroFeatured({ media }: HeroFeaturedProps) {
             ))}
           </motion.div>
 
-          {/* Overview */}
           <motion.p
             {...item(0.18)}
             className="mb-7 line-clamp-3 text-sm leading-relaxed text-white/65 md:text-base tv:text-lg tv:leading-relaxed"
@@ -79,7 +76,6 @@ export function HeroFeatured({ media }: HeroFeaturedProps) {
             {media.overview}
           </motion.p>
 
-          {/* Buttons */}
           <motion.div {...item(0.23)} className="flex gap-3">
             <button
               className={cn(
@@ -90,7 +86,7 @@ export function HeroFeatured({ media }: HeroFeaturedProps) {
               )}
             >
               <IconPlayerPlayFilled size={18} />
-              Play
+              {t("play")}
             </button>
             <button
               className={cn(
@@ -101,7 +97,7 @@ export function HeroFeatured({ media }: HeroFeaturedProps) {
               )}
             >
               <IconInfoCircle size={18} />
-              More Info
+              {t("moreInfo")}
             </button>
           </motion.div>
         </div>

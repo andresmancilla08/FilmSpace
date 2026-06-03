@@ -1,0 +1,25 @@
+{
+  "nav": {
+    "all": "Todo",
+    "movies": "Películas",
+    "series": "Series",
+    "anime": "Anime",
+    "searchLabel": "Buscar",
+    "profileLabel": "Perfil"
+  },
+  "hero": {
+    "play": "Reproducir",
+    "moreInfo": "Más información"
+  },
+  "home": {
+    "trendingNow": "En tendencia",
+    "popularSeries": "Series populares",
+    "animePicks": "Anime destacado",
+    "seeAll": "Ver todo"
+  },
+  "content": {
+    "movie": "Película",
+    "series": "Serie",
+    "anime": "Anime"
+  }
+}

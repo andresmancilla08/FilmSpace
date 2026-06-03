@@ -1,5 +1,6 @@
 import type { Media } from "@/types";
 
+// Placeholder images — swap with TMDB when TMDB_READ_TOKEN is set
 function p(seed: string) {
   return `https://picsum.photos/seed/${seed}/500/750`;
 }

@@ -23,8 +23,7 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ["var(--font-geist-sans)", "sans-serif"],
-        mono: ["var(--font-geist-mono)", "monospace"],
+        sans: ["var(--font-montserrat)", "sans-serif"],
       },
       screens: {
         tv: "1920px",
