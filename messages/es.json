@@ -30,5 +30,16 @@
     "similar": "También te puede gustar",
     "seasonCount": "{count, plural, one {# temporada} other {# temporadas}}",
     "episodeCount": "{count, plural, one {# episodio} other {# episodios}}"
+  },
+  "search": {
+    "placeholder": "Buscar películas, series, anime...",
+    "noResults": "Sin resultados",
+    "noResultsHint": "Intenta con otro término de búsqueda",
+    "trending": "Explorar por género",
+    "resultsFor": "Resultados para \"{query}\"",
+    "filterAll": "Todo",
+    "filterMovies": "Películas",
+    "filterSeries": "Series",
+    "filterAnime": "Anime"
   }
 }

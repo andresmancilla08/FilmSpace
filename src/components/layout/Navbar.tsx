@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { IconSearch, IconUser } from "@tabler/icons-react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { cn } from "@/lib/utils";
 import { useScrolled } from "@/hooks/useScrolled";
 import { LanguageSelector } from "./LanguageSelector";
@@ -12,6 +12,7 @@ type Tab = ContentType | "all";
 
 export function Navbar() {
   const t = useTranslations("nav");
+  const locale = useLocale();
   const scrolled = useScrolled();
   const [active, setActive] = useState<Tab>("all");
 
@@ -33,7 +34,7 @@ export function Navbar() {
     >
       <nav className="mx-auto flex h-16 max-w-screen-2xl items-center gap-4 px-4 md:px-8 tv:h-20 tv:px-16">
         <Link
-          href="/"
+          href={`/${locale}`}
           className="mr-2 flex-shrink-0 text-xl font-bold tracking-tight select-none tv:text-2xl"
         >
           Film<span className="text-primary">Space</span>
@@ -48,9 +49,7 @@ export function Navbar() {
                 "rounded-md px-3 py-1.5 text-sm font-medium transition-colors duration-150",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-black",
                 "tv:px-4 tv:py-2 tv:text-base",
-                active === tab.value
-                  ? "bg-white/10 text-white"
-                  : "text-white/55 hover:text-white"
+                active === tab.value ? "bg-white/10 text-white" : "text-white/55 hover:text-white"
               )}
             >
               {tab.label}
@@ -61,7 +60,9 @@ export function Navbar() {
         <div className="ml-auto flex items-center gap-2">
           <LanguageSelector />
 
-          <button
+          {/* Search — navega a /search */}
+          <Link
+            href={`/${locale}/search`}
             className={cn(
               "rounded-full p-2 text-white/60 transition-colors duration-150",
               "hover:bg-white/10 hover:text-white",
@@ -70,7 +71,8 @@ export function Navbar() {
             aria-label={t("searchLabel")}
           >
             <IconSearch size={20} />
-          </button>
+          </Link>
+
           <button
             className={cn(
               "rounded-full p-2 text-white/60 transition-colors duration-150",

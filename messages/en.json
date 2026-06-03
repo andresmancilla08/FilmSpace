@@ -30,5 +30,16 @@
     "similar": "More Like This",
     "seasonCount": "{count, plural, one {# Season} other {# Seasons}}",
     "episodeCount": "{count, plural, one {# Episode} other {# Episodes}}"
+  },
+  "search": {
+    "placeholder": "Search movies, series, anime...",
+    "noResults": "No results found",
+    "noResultsHint": "Try a different search term",
+    "trending": "Explore by genre",
+    "resultsFor": "Results for \"{query}\"",
+    "filterAll": "All",
+    "filterMovies": "Movies",
+    "filterSeries": "Series",
+    "filterAnime": "Anime"
   }
 }
