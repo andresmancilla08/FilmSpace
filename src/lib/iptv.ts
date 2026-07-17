@@ -24,10 +24,13 @@ interface Provider {
 const IPTV = "https://iptv-org.github.io/iptv";
 const FAST = "https://raw.githubusercontent.com/BuddyChewChew/app-m3u-generator/main/playlists";
 const TDT = "https://www.tdtchannels.com/lists"; // TDTChannels: proyecto abierto, canales FTA/TDT
+const APS = "https://www.apsattv.com"; // apsattv: agregador abierto de listas FAST (Samsung, LG, Vizio, etc.)
 
 const fast = (id: string, tab: TVTab, file: string): Provider => ({ id, tab, url: `${FAST}/${file}.m3u` });
+const aps = (id: string, tab: TVTab, file: string): Provider => ({ id, tab, url: `${APS}/${file}.m3u` });
 const iptvLang = (c: string): Provider => ({ id: `iptv-l-${c}`, tab: "live", url: `${IPTV}/languages/${c}.m3u` });
 const iptvCountry = (c: string): Provider => ({ id: `iptv-${c}`, tab: "live", url: `${IPTV}/countries/${c}.m3u` });
+const iptvRegion = (c: string): Provider => ({ id: `iptv-r-${c}`, tab: "live", url: `${IPTV}/regions/${c}.m3u` });
 
 // Orden = prioridad. El dedupe por URL conserva la PRIMERA aparición, así que poniendo las
 // fuentes en español al principio, "En vivo" (destacados + primeras pantallas) sale en español
@@ -42,11 +45,24 @@ export const PROVIDERS: Provider[] = [
   fast("pluto-mx", "live", "plutotv_mx"),
   fast("pluto-ar", "live", "plutotv_ar"),
   fast("pluto-cl", "live", "plutotv_cl"),
+  iptvRegion("amer"), // iptv-org: región Américas (Latam + Norteamérica)
   // ── En vivo — resto del mundo (catálogo completo iptv-org + FAST todas las regiones) ──
   { id: "iptv-all", tab: "live", url: `${IPTV}/index.m3u` }, // iptv-org COMPLETO (~13k)
   fast("samsung-all", "live", "samsungtvplus_all"), // Samsung TV+ todas las regiones (~2.6k)
   fast("pluto-all", "live", "plutotv_all"), // Pluto TV todas las regiones, sin geo-block (~2.8k)
   fast("roku-all", "live", "roku_all"),
+  // aps-samsung-us (ssungusa) eliminado: descarga inestable y redundante con samsung-all/samsung-es
+  aps("aps-lg", "live", "uslg"), // LG Channels USA
+  aps("aps-vizio", "live", "vizio"), // Vizio WatchFree
+  aps("aps-distro", "live", "distro"), // DistroTV (internacional)
+  aps("aps-xiaomi", "live", "xiaomi"), // Xiaomi (internacional)
+  aps("aps-xumo", "live", "xumo"), // XUMO USA
+  aps("aps-localnow", "live", "localnow"), // Local Now USA
+  aps("aps-rakuten-uk", "live", "rakutentv-uk"), // Rakuten TV UK
+  aps("aps-rakuten-fr", "live", "rakutentv-fr"), // Rakuten TV Francia
+  aps("aps-vidaa", "live", "vidaa"), // Vidaa/Hisense (internacional)
+  aps("aps-firetv", "live", "firetv"), // Amazon Fire TV USA
+  { id: "freetv", tab: "live", url: "https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u8" }, // Free-TV/IPTV (varias regiones)
   // ── 24/7 — canales de contenido en loop (single-title) ──
   fast("plex-all", "247", "plex_all"),
   fast("tubi-all", "247", "tubi_all"),
