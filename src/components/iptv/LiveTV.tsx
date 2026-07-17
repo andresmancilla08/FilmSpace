@@ -20,6 +20,7 @@ import {
   fetchVodItems,
   fetchEpisodes,
   getSource,
+  hasVodSource,
   saveSource,
   clearSource,
   proxied,
@@ -78,13 +79,13 @@ export function LiveTV() {
     setError(null);
 
     if (isVod(which)) {
-      if (!getSource()) {
+      if (!hasVodSource()) {
         setHasSource(false);
         setError("nosource");
         setLoading(false);
         return;
       }
-      setHasSource(true);
+      setHasSource(!!getSource());
       const key = cacheKey(which, cat);
       if (cache[key] && vodCats[which]) {
         setLoading(false);

@@ -8,6 +8,7 @@ import {
   xtreamVodStreams,
   type XtreamCreds,
 } from "@/lib/xtream";
+import { VOD_SOURCES } from "@/lib/vod-sources";
 
 const KEY = "filmspace.iptv.source";
 
@@ -168,17 +169,57 @@ export async function fetchTab(tab: "live" | "247" | "radio"): Promise<IPTVChann
 
 // Fuente personalizada del usuario (opcional, si añade su propia lista).
 export function saveSource(url: string) {
-  m3uCache = null;
   seriesCache = null;
+  vodM3uCache = null;
   localStorage.setItem(KEY, url);
 }
 export function getSource(): string | null {
   return typeof window === "undefined" ? null : localStorage.getItem(KEY);
 }
 export function clearSource() {
-  m3uCache = null;
   seriesCache = null;
+  vodM3uCache = null;
   localStorage.removeItem(KEY);
+}
+
+// ¿Hay catálogo VOD disponible? Sí si el usuario fijó listas en vod-sources.ts
+// o pegó una lista propia con el botón +.
+export function hasVodSource(): boolean {
+  return VOD_SOURCES.length > 0 || !!getSource();
+}
+
+// Listas M3U para VOD = las fijas (vod-sources.ts) + la personalizada si es M3U.
+// (Una fuente Xtream se maneja por su API aparte, no como M3U.)
+function m3uVodSources(): string[] {
+  const custom = getSource();
+  const list = [...VOD_SOURCES];
+  if (custom && !parseXtream(custom)) list.push(custom);
+  return Array.from(new Set(list.filter(Boolean)));
+}
+
+// Descarga y fusiona TODAS las listas M3U de VOD (tolera fallos individuales),
+// dedupe por URL. Cache en memoria por combinación de fuentes.
+let vodM3uCache: { key: string; items: IPTVChannel[] } | null = null;
+
+async function loadVodM3U(): Promise<IPTVChannel[]> {
+  const sources = m3uVodSources();
+  if (!sources.length) throw new Error("no source");
+  const key = sources.join("|");
+  if (vodM3uCache?.key === key) return vodM3uCache.items;
+  const results = await Promise.allSettled(sources.map(fetchPlaylist));
+  const seen = new Set<string>();
+  const items: IPTVChannel[] = [];
+  for (const r of results) {
+    if (r.status !== "fulfilled") continue;
+    for (const c of r.value) {
+      if (seen.has(c.url)) continue;
+      seen.add(c.url);
+      items.push(c);
+    }
+  }
+  if (!items.length) throw new Error("empty");
+  vodM3uCache = { key, items };
+  return items;
 }
 
 // ───────────────────────── VOD (películas / series) ─────────────────────────
@@ -199,22 +240,10 @@ async function fromM3U(kind: "movie" | "series"): Promise<{
   categories: IPTVCategory[];
   items: IPTVChannel[];
 }> {
-  const all = await loadCustomM3U();
+  const all = await loadVodM3U();
   const items = all.filter((c) => c.kind === kind);
   if (!items.length) throw new Error("empty");
   return { categories: m3uAsCategories(items), items };
-}
-
-// Cache en memoria del M3U custom (re-parsear 10k+ líneas por categoría es absurdo).
-let m3uCache: { url: string; items: IPTVChannel[] } | null = null;
-
-async function loadCustomM3U(): Promise<IPTVChannel[]> {
-  const src = getSource();
-  if (!src) throw new Error("no source");
-  if (m3uCache?.url === src) return m3uCache.items;
-  const items = await fetchPlaylist(src);
-  m3uCache = { url: src, items };
-  return items;
 }
 
 // ── Series M3U: agrupar episodios sueltos en shows con temporadas ──────────
@@ -309,7 +338,7 @@ async function getM3USeries() {
   const src = getSource();
   if (!src) throw new Error("no source");
   if (seriesCache?.url === src) return seriesCache;
-  const all = await loadCustomM3U();
+  const all = await loadVodM3U();
   const eps = all.filter((c) => c.kind === "series");
   if (!eps.length) throw new Error("empty");
   seriesCache = { url: src, ...groupM3USeries(eps) };
@@ -320,8 +349,8 @@ export async function fetchVodCategories(
   tab: "movies" | "series"
 ): Promise<IPTVCategory[]> {
   const src = getSource();
-  if (!src) throw new Error("no source");
-  const creds = parseXtream(src);
+  if (!hasVodSource()) throw new Error("no source");
+  const creds = src ? parseXtream(src) : null;
   if (creds) {
     const list =
       tab === "movies" ? await xtreamVodCategories(creds) : await xtreamSeriesCategories(creds);
@@ -337,8 +366,8 @@ export async function fetchVodItems(
   categoryId?: string
 ): Promise<IPTVChannel[]> {
   const src = getSource();
-  if (!src) throw new Error("no source");
-  const creds = parseXtream(src);
+  if (!hasVodSource()) throw new Error("no source");
+  const creds = src ? parseXtream(src) : null;
   if (creds) {
     const items =
       tab === "movies"
@@ -353,13 +382,13 @@ export async function fetchVodItems(
 }
 
 export async function fetchEpisodes(seriesId: string): Promise<IPTVEpisode[]> {
-  const src = getSource();
-  if (!src) throw new Error("no source");
   if (seriesId.startsWith("m3u:")) {
     const eps = (await getM3USeries()).episodes.get(seriesId);
     if (!eps?.length) throw new Error("empty");
     return eps;
   }
+  const src = getSource();
+  if (!src) throw new Error("no source");
   const creds = parseXtream(src);
   if (!creds) throw new Error("not xtream");
   const eps = await xtreamSeriesInfo(creds, seriesId);
