@@ -14,24 +14,30 @@ interface Provider {
 const IPTV = "https://iptv-org.github.io/iptv";
 const FAST = "https://raw.githubusercontent.com/BuddyChewChew/app-m3u-generator/main/playlists";
 
+// Helpers para no repetir la base de cada proveedor.
+const iptvLang = (c: string): Provider => ({ id: `iptv-l-${c}`, tab: "live", url: `${IPTV}/languages/${c}.m3u` });
+const iptvCountry = (c: string): Provider => ({ id: `iptv-${c}`, tab: "live", url: `${IPTV}/countries/${c}.m3u` });
+const fast = (id: string, tab: TVTab, file: string): Provider => ({ id, tab, url: `${FAST}/${file}.m3u` });
+
 export const PROVIDERS: Provider[] = [
-  // En vivo — canales lineales FTA + FAST en directo
-  { id: "iptv-spa", tab: "live", url: `${IPTV}/languages/spa.m3u` },
-  { id: "iptv-mx", tab: "live", url: `${IPTV}/countries/mx.m3u` },
-  { id: "iptv-es", tab: "live", url: `${IPTV}/countries/es.m3u` },
-  { id: "iptv-ar", tab: "live", url: `${IPTV}/countries/ar.m3u` },
-  { id: "iptv-co", tab: "live", url: `${IPTV}/countries/co.m3u` },
-  { id: "iptv-cl", tab: "live", url: `${IPTV}/countries/cl.m3u` },
-  { id: "iptv-pe", tab: "live", url: `${IPTV}/countries/pe.m3u` },
-  { id: "iptv-us", tab: "live", url: `${IPTV}/countries/us.m3u` },
-  { id: "samsung-es", tab: "live", url: `${FAST}/samsungtvplus_es.m3u` },
-  { id: "samsung-us", tab: "live", url: `${FAST}/samsungtvplus_us.m3u` },
-  { id: "pluto-es", tab: "live", url: `${FAST}/plutotv_es.m3u` },
-  { id: "pluto-mx", tab: "live", url: `${FAST}/plutotv_mx.m3u` },
-  { id: "pluto-us", tab: "live", url: `${FAST}/plutotv_us.m3u` },
-  // 24/7 — canales de contenido en loop (single-title)
-  { id: "plex-all", tab: "247", url: `${FAST}/plex_all.m3u` },
-  { id: "tubi-all", tab: "247", url: `${FAST}/tubi_all.m3u` },
+  // ── En vivo — canales lineales FTA + FAST en directo ──
+  iptvLang("spa"),
+  iptvLang("eng"),
+  // Países hispanohablantes (canales locales no cubiertos por el idioma)
+  ...["mx", "es", "ar", "co", "cl", "pe", "ve", "ec", "uy", "py", "bo", "cr", "pa", "do", "gt", "hn", "ni", "sv", "pr", "us"].map(iptvCountry),
+  // FAST en directo
+  fast("samsung-es", "live", "samsungtvplus_es"),
+  fast("samsung-us", "live", "samsungtvplus_us"),
+  fast("samsung-gb", "live", "samsungtvplus_gb"),
+  fast("pluto-es", "live", "plutotv_es"),
+  fast("pluto-mx", "live", "plutotv_mx"),
+  fast("pluto-ar", "live", "plutotv_ar"),
+  fast("pluto-cl", "live", "plutotv_cl"),
+  fast("pluto-us", "live", "plutotv_us"),
+  fast("roku-all", "live", "roku_all"),
+  // ── 24/7 — canales de contenido en loop (single-title) ──
+  fast("plex-all", "247", "plex_all"),
+  fast("tubi-all", "247", "tubi_all"),
 ];
 
 // ───────────────────────── Normalización de categorías ─────────────────────────
