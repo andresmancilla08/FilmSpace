@@ -22,6 +22,12 @@
 - **Descartado:** app nativa Expo; TiviMate; listas "todo incluido" pirata.
 - **Estado:** live + VOD/series funcionales; falta pase del equipo visual y arte de iconos PWA.
 
+### Agrupado de series en M3U puro — Vigente
+- **Qué:** un M3U (m3u_plus) lista cada episodio como línea suelta ("Show S01E02"). `groupM3USeries()` (en `src/lib/iptv.ts`) detecta patrones `SxxExx` / `NxNN`, agrupa por nombre de show y sintetiza un `seriesId` `m3u:<show>`, reusando el mismo panel de temporadas/episodios que Xtream.
+- **Por qué:** sin fuente Xtream, la pestaña Series mostraba un póster por episodio en vez de por serie. El usuario opera solo con M3U.
+- **Cómo engancha:** `fetchVodItems("series")` → `shows`; `fetchEpisodes("m3u:...")` → episodios cacheados. La UI (`LiveTV.tsx`) no cambió: ya navegaba por `seriesId`.
+- **Descartado:** parsear nombres con IA / TMDB matching (innecesario para agrupar; los patrones SxxExx cubren la mayoría de proveedores).
+
 ### PWA instalable — Vigente
 - **Qué:** `app/manifest.ts` + `app/icon.tsx` + `app/apple-icon.tsx` (iconos generados por código, placeholder) + `appleWebApp` en metadata.
 - **Por qué:** instalable en iPhone/iPad/Android como app sin tiendas ni coste.

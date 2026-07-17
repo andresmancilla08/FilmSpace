@@ -169,6 +169,7 @@ export async function fetchTab(tab: "live" | "247" | "radio"): Promise<IPTVChann
 // Fuente personalizada del usuario (opcional, si añade su propia lista).
 export function saveSource(url: string) {
   m3uCache = null;
+  seriesCache = null;
   localStorage.setItem(KEY, url);
 }
 export function getSource(): string | null {
@@ -176,6 +177,7 @@ export function getSource(): string | null {
 }
 export function clearSource() {
   m3uCache = null;
+  seriesCache = null;
   localStorage.removeItem(KEY);
 }
 
@@ -215,6 +217,105 @@ async function loadCustomM3U(): Promise<IPTVChannel[]> {
   return items;
 }
 
+// ── Series M3U: agrupar episodios sueltos en shows con temporadas ──────────
+// Un M3U (m3u_plus de proveedor Xtream) lista CADA episodio como línea propia
+// ("Breaking Bad S01E01"). Sin agrupar, la pestaña Series mostraría un póster por
+// episodio. Aquí los juntamos por show → un póster por serie → panel de episodios
+// (el mismo que usa Xtream, vía seriesId "m3u:<show>").
+const SE_PATTERNS: RegExp[] = [
+  /^(.*?)[\s._-]*s(\d{1,2})[\s._-]*e(\d{1,3})\b/i, // Show S01E02
+  /^(.*?)[\s._-]+(\d{1,2})x(\d{1,3})\b/i, // Show 1x02
+];
+
+function parseEpisode(name: string): {
+  show: string;
+  season: number;
+  episode: number;
+  epTitle?: string;
+} {
+  for (const re of SE_PATTERNS) {
+    const m = name.match(re);
+    if (m) {
+      const show = m[1].replace(/[\s._:-]+$/, "").trim();
+      const rest = name.slice(m[0].length).replace(/^[\s._:-]+/, "").trim();
+      return {
+        show: show || name.trim(),
+        season: Number(m[2]) || 1,
+        episode: Number(m[3]) || 1,
+        epTitle: rest || undefined,
+      };
+    }
+  }
+  // Sin patrón SxxExx → serie de un solo episodio (special / peli en pestaña series).
+  return { show: name.trim(), season: 1, episode: 1 };
+}
+
+export function groupM3USeries(eps: IPTVChannel[]): {
+  shows: IPTVChannel[];
+  episodes: Map<string, IPTVEpisode[]>;
+  categories: IPTVCategory[];
+} {
+  const map = new Map<string, { show: IPTVChannel; eps: IPTVEpisode[] }>();
+  let auto = 0;
+  for (const c of eps) {
+    const { show, season, episode, epTitle } = parseEpisode(c.name);
+    const key = show.toLowerCase();
+    let entry = map.get(key);
+    if (!entry) {
+      entry = {
+        show: {
+          name: show,
+          logo: c.logo,
+          group: c.group,
+          url: "",
+          category: c.category || "other",
+          kind: "series",
+          seriesId: `m3u:${key}`,
+        },
+        eps: [],
+      };
+      map.set(key, entry);
+    }
+    if (!entry.show.logo && c.logo) entry.show.logo = c.logo;
+    entry.eps.push({
+      id: c.url || `${key}-${++auto}`,
+      title: epTitle || `S${season}E${String(episode).padStart(2, "0")}`,
+      season,
+      episode,
+      url: c.url,
+    });
+  }
+  const shows: IPTVChannel[] = [];
+  const episodes = new Map<string, IPTVEpisode[]>();
+  for (const [key, entry] of map) {
+    entry.eps.sort((a, b) => a.season - b.season || a.episode - b.episode);
+    shows.push(entry.show);
+    episodes.set(`m3u:${key}`, entry.eps);
+  }
+  shows.sort((a, b) => a.name.localeCompare(b.name));
+  const catKeys = new Set(shows.map((s) => s.category || "other"));
+  const categories = Array.from(catKeys)
+    .sort((a, b) => (a === "other" ? 1 : b === "other" ? -1 : a.localeCompare(b)))
+    .map((k) => ({ id: k, name: k }));
+  return { shows, episodes, categories };
+}
+
+// Cache del agrupado (evita re-agrupar 10k+ líneas en cada interacción).
+let seriesCache:
+  | { url: string; shows: IPTVChannel[]; episodes: Map<string, IPTVEpisode[]>; categories: IPTVCategory[] }
+  | null = null;
+
+async function getM3USeries() {
+  const src = getSource();
+  if (!src) throw new Error("no source");
+  if (seriesCache?.url === src) return seriesCache;
+  const all = await loadCustomM3U();
+  const eps = all.filter((c) => c.kind === "series");
+  if (!eps.length) throw new Error("empty");
+  seriesCache = { url: src, ...groupM3USeries(eps) };
+  return seriesCache;
+}
+
 export async function fetchVodCategories(
   tab: "movies" | "series"
 ): Promise<IPTVCategory[]> {
@@ -226,7 +327,8 @@ export async function fetchVodCategories(
       tab === "movies" ? await xtreamVodCategories(creds) : await xtreamSeriesCategories(creds);
     if (list.length) return list;
   }
-  const { categories } = await fromM3U(tab === "movies" ? "movie" : "series");
+  if (tab === "series") return (await getM3USeries()).categories;
+  const { categories } = await fromM3U("movie");
   return categories;
 }
 
@@ -244,7 +346,8 @@ export async function fetchVodItems(
         : await xtreamSeries(creds, categoryId);
     if (items.length) return items;
   }
-  const { items } = await fromM3U(tab === "movies" ? "movie" : "series");
+  const items =
+    tab === "series" ? (await getM3USeries()).shows : (await fromM3U("movie")).items;
   if (!categoryId || categoryId === "__all__") return items;
   return items.filter((c) => (c.category || "other") === categoryId);
 }
@@ -252,6 +355,11 @@ export async function fetchVodItems(
 export async function fetchEpisodes(seriesId: string): Promise<IPTVEpisode[]> {
   const src = getSource();
   if (!src) throw new Error("no source");
+  if (seriesId.startsWith("m3u:")) {
+    const eps = (await getM3USeries()).episodes.get(seriesId);
+    if (!eps?.length) throw new Error("empty");
+    return eps;
+  }
   const creds = parseXtream(src);
   if (!creds) throw new Error("not xtream");
   const eps = await xtreamSeriesInfo(creds, seriesId);
@@ -292,4 +400,19 @@ http://host/live/b.ts`;
 #EXTINF:-1 group-title="Movies",Film
 http://h/movie/u/p/1.mp4`);
   console.assert(vod[0]?.kind === "movie", "detectKind movie mal");
+
+  // Agrupado de series M3U: 3 episodios de 2 shows → 2 series, orden por temporada/ep.
+  const g = groupM3USeries(
+    parseM3U(`#EXTM3U
+#EXTINF:-1 group-title="Series",Breaking Bad S01E02
+http://h/series/u/p/2.mp4
+#EXTINF:-1 group-title="Series",Breaking Bad S01E01
+http://h/series/u/p/1.mp4
+#EXTINF:-1 group-title="Series",Dark 1x01
+http://h/series/u/p/3.mp4`)
+  );
+  console.assert(g.shows.length === 2, "esperaba 2 series agrupadas");
+  console.assert(g.episodes.get("m3u:breaking bad")?.length === 2, "esperaba 2 episodios BB");
+  console.assert(g.episodes.get("m3u:breaking bad")?.[0].episode === 1, "episodios sin ordenar");
+  console.assert(g.episodes.get("m3u:dark")?.[0].season === 1, "parseo 1x01 mal");
 }
