@@ -25,18 +25,26 @@ const FAST = "https://raw.githubusercontent.com/BuddyChewChew/app-m3u-generator/
 const TDT = "https://www.tdtchannels.com/lists"; // TDTChannels: proyecto abierto, canales FTA/TDT
 
 const fast = (id: string, tab: TVTab, file: string): Provider => ({ id, tab, url: `${FAST}/${file}.m3u` });
+const iptvLang = (c: string): Provider => ({ id: `iptv-l-${c}`, tab: "live", url: `${IPTV}/languages/${c}.m3u` });
+const iptvCountry = (c: string): Provider => ({ id: `iptv-${c}`, tab: "live", url: `${IPTV}/countries/${c}.m3u` });
 
+// Orden = prioridad. El dedupe por URL conserva la PRIMERA aparición, así que poniendo las
+// fuentes en español al principio, "En vivo" (destacados + primeras pantallas) sale en español
+// y el catálogo global de iptv-org queda accesible por búsqueda/categoría más abajo.
 export const PROVIDERS: Provider[] = [
-  // ── En vivo — catálogo abierto completo + FTA + FAST ──
-  { id: "iptv-all", tab: "live", url: `${IPTV}/index.m3u` }, // iptv-org COMPLETO (~13k canales)
+  // ── En vivo — ESPAÑOL primero ──
+  iptvLang("spa"), // iptv-org: todos los canales en español
   { id: "tdt-tv", tab: "live", url: `${TDT}/tv.m3u8` }, // TDTChannels España (FTA)
+  ...["es", "mx", "ar", "co", "cl", "pe", "ve", "ec", "uy", "py", "bo", "cr", "pa", "do", "gt", "hn", "ni", "sv", "pr"].map(iptvCountry),
   fast("samsung-es", "live", "samsungtvplus_es"),
-  fast("samsung-us", "live", "samsungtvplus_us"),
-  fast("samsung-gb", "live", "samsungtvplus_gb"),
   fast("pluto-es", "live", "plutotv_es"),
   fast("pluto-mx", "live", "plutotv_mx"),
   fast("pluto-ar", "live", "plutotv_ar"),
   fast("pluto-cl", "live", "plutotv_cl"),
+  // ── En vivo — resto del mundo (catálogo completo iptv-org + FAST) ──
+  { id: "iptv-all", tab: "live", url: `${IPTV}/index.m3u` }, // iptv-org COMPLETO (~13k)
+  fast("samsung-us", "live", "samsungtvplus_us"),
+  fast("samsung-gb", "live", "samsungtvplus_gb"),
   fast("pluto-us", "live", "plutotv_us"),
   fast("roku-all", "live", "roku_all"),
   // ── 24/7 — canales de contenido en loop (single-title) ──
@@ -175,13 +183,14 @@ export function clearSource() {
 // Modelo Xuper: el catálogo lo trae la lista del usuario (Xtream API o M3U con /movie|/series).
 // Sin fuente propia no hay VOD comercial — las listas "todo incluido" pirateadas no se integran.
 
+// Categorías VOD desde M3U: usa la clave canónica normalizada (traducible i18n), NUNCA el
+// group-title crudo (que viene compuesto con ";" y en inglés). El id = clave canónica; la UI
+// lo traduce vía catLabel/live.cat.*.
 function m3uAsCategories(items: IPTVChannel[]): IPTVCategory[] {
-  const seen = new Map<string, string>();
-  for (const c of items) {
-    const id = c.group || c.category || "other";
-    if (!seen.has(id)) seen.set(id, c.group || c.category || "other");
-  }
-  return Array.from(seen.entries()).map(([id, name]) => ({ id, name }));
+  const seen = new Set<string>();
+  for (const c of items) seen.add(c.category || "other");
+  const keys = Array.from(seen).sort((a, b) => (a === "other" ? 1 : b === "other" ? -1 : a.localeCompare(b)));
+  return keys.map((k) => ({ id: k, name: k }));
 }
 
 async function fromM3U(kind: "movie" | "series"): Promise<{
@@ -237,7 +246,7 @@ export async function fetchVodItems(
   }
   const { items } = await fromM3U(tab === "movies" ? "movie" : "series");
   if (!categoryId || categoryId === "__all__") return items;
-  return items.filter((c) => (c.group || c.category) === categoryId);
+  return items.filter((c) => (c.category || "other") === categoryId);
 }
 
 export async function fetchEpisodes(seriesId: string): Promise<IPTVEpisode[]> {

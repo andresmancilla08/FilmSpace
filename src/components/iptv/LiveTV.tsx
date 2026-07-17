@@ -206,8 +206,12 @@ export function LiveTV() {
 
   const catLabel = (key: string) => {
     if (key === "__all__") return t("cat.all");
+    // Clave canónica → SIEMPRE traducida (evita fugas de inglés / group-title crudo).
+    if (t.has(`cat.${key}`)) return t(`cat.${key}`);
+    // Categoría propia del proveedor (Xtream) → su nombre tal cual (dato).
     if (categories.names.has(key)) return categories.names.get(key)!;
-    return t.has(`cat.${key}`) ? t(`cat.${key}`) : key;
+    // Grupo crudo (radio/país): limpia prefijos y guiones bajos para mostrar.
+    return key.replace(/^Radio[_ ]/i, "").replace(/_/g, " ").trim() || key;
   };
 
   const titleForTab = () => {
