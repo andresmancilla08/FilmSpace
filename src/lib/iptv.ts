@@ -42,11 +42,10 @@ export const PROVIDERS: Provider[] = [
   fast("pluto-mx", "live", "plutotv_mx"),
   fast("pluto-ar", "live", "plutotv_ar"),
   fast("pluto-cl", "live", "plutotv_cl"),
-  // ── En vivo — resto del mundo (catálogo completo iptv-org + FAST) ──
+  // ── En vivo — resto del mundo (catálogo completo iptv-org + FAST todas las regiones) ──
   { id: "iptv-all", tab: "live", url: `${IPTV}/index.m3u` }, // iptv-org COMPLETO (~13k)
-  fast("samsung-us", "live", "samsungtvplus_us"),
-  fast("samsung-gb", "live", "samsungtvplus_gb"),
-  fast("pluto-us", "live", "plutotv_us"),
+  fast("samsung-all", "live", "samsungtvplus_all"), // Samsung TV+ todas las regiones (~2.6k)
+  fast("pluto-all", "live", "plutotv_all"), // Pluto TV todas las regiones, sin geo-block (~2.8k)
   fast("roku-all", "live", "roku_all"),
   // ── 24/7 — canales de contenido en loop (single-title) ──
   fast("plex-all", "247", "plex_all"),

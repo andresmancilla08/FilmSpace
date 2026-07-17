@@ -15,4 +15,17 @@
 export const VOD_SOURCES: string[] = [
   // 👇 Pega tus URLs aquí:
 
+  // ── iptv-org: índice general (todos los canales) ──
+  "https://iptv-org.github.io/iptv/index.m3u",
+
+  // ── iptv-org: categorías con contenido de películas y series ──
+  "https://iptv-org.github.io/iptv/categories/movies.m3u",
+  "https://iptv-org.github.io/iptv/categories/series.m3u",
+  "https://iptv-org.github.io/iptv/categories/classic.m3u",
+  "https://iptv-org.github.io/iptv/categories/comedy.m3u",
+  "https://iptv-org.github.io/iptv/categories/documentary.m3u",
+  "https://iptv-org.github.io/iptv/categories/animation.m3u",
+  "https://iptv-org.github.io/iptv/categories/family.m3u",
+  "https://iptv-org.github.io/iptv/categories/kids.m3u",
+  "https://iptv-org.github.io/iptv/categories/entertainment.m3u",
 ];
