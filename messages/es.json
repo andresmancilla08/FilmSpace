@@ -107,6 +107,27 @@
     "channels": "{count} canales",
     "noChannels": "No hay canales en esta categoría",
     "error": "No se pudo cargar la lista. Revisa la URL.",
-    "legal": "Usa solo listas propias o con licencia."
+    "legal": "Usa solo listas propias o con licencia.",
+    "tabLive": "En vivo",
+    "tab247": "24/7",
+    "featured": "Destacados ahora",
+    "channelsLabel": "canales",
+    "myList": "Mi lista",
+    "addList": "Añadir mi lista",
+    "cat": {
+      "all": "Todos",
+      "news": "Noticias",
+      "sports": "Deportes",
+      "movies": "Cine",
+      "series": "Series",
+      "kids": "Infantil",
+      "music": "Música",
+      "documentary": "Documentales",
+      "entertainment": "Entretenimiento",
+      "animation": "Anime",
+      "religious": "Religioso",
+      "general": "General",
+      "other": "Otros"
+    }
   }
 }

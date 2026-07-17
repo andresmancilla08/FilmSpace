@@ -17,11 +17,15 @@ export interface Genre {
   name: string;
 }
 
+export type TVTab = "live" | "247";
+
 export interface IPTVChannel {
   name: string;
   logo: string;
   group: string;
   url: string;
+  category: string; // clave canónica traducible (live.cat.*)
+  quality?: string; // "1080P", "720P", "4K"…
 }
 
 export interface CastMember {
