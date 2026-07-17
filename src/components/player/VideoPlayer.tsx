@@ -75,10 +75,25 @@ export function VideoPlayer({
   // Fuente activa: empieza directa; cae al proxy solo si el navegador la bloquea (ahorra banda del servidor).
   const [src, setSrc] = useState(videoUrl);
   const triedProxy = useRef(false);
+  const autoStarted = useRef(false);
   useEffect(() => {
     setSrc(videoUrl);
     triedProxy.current = false;
+    autoStarted.current = false;
   }, [videoUrl]);
+
+  // Arranca la reproducción una vez por fuente. Autoplay con sonido suele estar bloqueado
+  // → si el navegador lo rechaza, reintenta silenciado (el usuario puede desmutear).
+  const autoPlay = useCallback(() => {
+    const v = videoRef.current;
+    if (!v || autoStarted.current) return;
+    autoStarted.current = true;
+    v.play().catch(() => {
+      v.muted = true;
+      setMuted(true);
+      v.play().catch(() => {});
+    });
+  }, []);
 
   const tryFallback = useCallback(() => {
     if (proxyUrl && !triedProxy.current) {
@@ -310,7 +325,10 @@ export function VideoPlayer({
         onDurationChange={() => setDuration(videoRef.current?.duration ?? 0)}
         onWaiting={() => setBuffering(true)}
         onPlaying={() => setBuffering(false)}
-        onCanPlay={() => setBuffering(false)}
+        onCanPlay={() => {
+          setBuffering(false);
+          autoPlay();
+        }}
         onVolumeChange={() => {
           const v = videoRef.current;
           if (!v) return;
