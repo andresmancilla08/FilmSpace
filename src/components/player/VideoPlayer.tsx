@@ -72,13 +72,12 @@ export function VideoPlayer({
   const [feedback, setFeedback] = useState<"play" | "pause" | null>(null);
   const [dragging, setDragging] = useState(false);
 
-  // Fuente activa: directa por defecto (ahorra banda). Pero si la página es https y el stream
-  // es http, el navegador SIEMPRE bloquea la directa (mixed content) → arrancamos ya por el proxy.
+  // Fuente activa. Los streams http:// (IPs, iptv-org) el navegador casi nunca los reproduce
+  // directo (sin CORS, o mixed-content en https) y de todos modos acabarían en el proxy →
+  // arrancamos YA por el proxy (mismo ancho de banda, sin la espera del intento fallido).
+  // Los https:// se intentan directos primero (muchos funcionan y ahorran banda del server).
   const pickSrc = (u: string): { src: string; proxied: boolean } =>
-    proxyUrl &&
-    typeof window !== "undefined" &&
-    window.location.protocol === "https:" &&
-    u.startsWith("http:")
+    proxyUrl && u.startsWith("http://")
       ? { src: proxyUrl, proxied: true }
       : { src: u, proxied: false };
 
