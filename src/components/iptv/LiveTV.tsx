@@ -49,6 +49,9 @@ export function LiveTV() {
   const [customUrl, setCustomUrl] = useState("");
 
   const channels = cache[tab] ?? [];
+  // En 24/7 (Plex/Tubi) el group-title es país → se usa crudo como categoría; en live, normalizado.
+  const rawCats = tab === "247";
+  const bucketOf = (c: IPTVChannel) => (rawCats ? c.group || "other" : c.category);
 
   // Carga perezosa por pestaña (una vez). Directo/24-7 desde proveedores; custom desde la URL del usuario.
   async function loadTab(which: Tab, customSrc?: string) {
@@ -89,23 +92,28 @@ export function LiveTV() {
   // Categorías presentes con su conteo, ordenadas por volumen ("Otros" siempre al final).
   const categories = useMemo(() => {
     const count = new Map<string, number>();
-    channels.forEach((c) => count.set(c.category, (count.get(c.category) ?? 0) + 1));
+    channels.forEach((c) => {
+      const k = bucketOf(c);
+      count.set(k, (count.get(k) ?? 0) + 1);
+    });
     const keys = Array.from(count.keys()).sort((a, b) => {
       if (a === "other") return 1;
       if (b === "other") return -1;
       return (count.get(b) ?? 0) - (count.get(a) ?? 0);
     });
     return { list: ["__all__", ...keys], count };
-  }, [channels]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [channels, rawCats]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return channels.filter(
       (c) =>
-        (category === "__all__" || c.category === category) &&
+        (category === "__all__" || bucketOf(c) === category) &&
         (!q || c.name.toLowerCase().includes(q))
     );
-  }, [channels, category, query]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [channels, category, query, rawCats]);
 
   const visible = filtered.slice(0, MAX_VISIBLE);
   // Destacados: primeros canales con logo (más presentables), solo en vista limpia.
@@ -354,7 +362,7 @@ export function LiveTV() {
                       "flex flex-shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-bold transition-colors duration-150",
                       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                       on
-                        ? "border-white bg-white text-bg"
+                        ? "border-white bg-white text-black"
                         : "border-white/[0.06] bg-surface text-white/60 hover:text-white"
                     )}
                   >

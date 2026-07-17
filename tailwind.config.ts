@@ -12,6 +12,7 @@ const config: Config = {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+        bg: "#0a0a0a", // token asumido por toda la app (bg-bg / text-bg); antes no existía
         primary: {
           DEFAULT: "#E50914",
           foreground: "#FFFFFF",
