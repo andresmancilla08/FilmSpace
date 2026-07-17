@@ -28,10 +28,20 @@ async function getPageData() {
   };
 }
 
-export default async function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ t?: string }>;
+}) {
   const t = await getTranslations("home");
   const tc = await getTranslations("classics");
   const { featured, trending, series, anime, classics } = await getPageData();
+
+  // Filtro del navbar (?t=movie|series|anime). Sin filtro = todo.
+  const filter = (await searchParams).t;
+  const showMovies = !filter || filter === "movie";
+  const showSeries = !filter || filter === "series";
+  const showAnime = !filter || filter === "anime";
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
@@ -39,10 +49,10 @@ export default async function Home() {
       <main>
         <HeroFeatured media={featured} />
         <div className="space-y-10 py-10 tv:space-y-14 tv:py-14">
-          <MediaRow title={t("trendingNow")}   items={trending} />
-          <MediaRow title={t("popularSeries")} items={series} />
-          <MediaRow title={t("animePicks")}    items={anime} />
-          <ClassicRow title={tc("rowTitle")}   items={classics} />
+          {showMovies && <MediaRow title={t("trendingNow")} items={trending} />}
+          {showSeries && <MediaRow title={t("popularSeries")} items={series} />}
+          {showAnime && <MediaRow title={t("animePicks")} items={anime} />}
+          {showMovies && <ClassicRow title={tc("rowTitle")} items={classics} />}
         </div>
       </main>
     </div>

@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import { Suspense } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import { IconSearch, IconUser, IconBroadcast } from "@tabler/icons-react";
 import { useTranslations, useLocale } from "next-intl";
 import { cn } from "@/lib/utils";
@@ -10,20 +11,64 @@ import { LanguageSelector } from "./LanguageSelector";
 import type { ContentType } from "@/types";
 
 type Tab = ContentType | "all";
+const TAB_VALUES: Tab[] = ["all", "movie", "series", "anime"];
+
+const TAB_CLASS =
+  "rounded-md px-3 py-1.5 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-black tv:px-4 tv:py-2 tv:text-base";
+
+// Presentacional: pinta los 4 tabs de filtro. `active` = home + filtro coincidente.
+function TabLinks({
+  home,
+  onHome,
+  labels,
+  currentFilter,
+}: {
+  home: string;
+  onHome: boolean;
+  labels: Record<Tab, string>;
+  currentFilter: Tab;
+}) {
+  return (
+    <>
+      {TAB_VALUES.map((value) => {
+        const active = onHome && currentFilter === value;
+        return (
+          <Link
+            key={value}
+            href={value === "all" ? home : `${home}?t=${value}`}
+            className={cn(TAB_CLASS, active ? "bg-white/10 text-white" : "text-white/55 hover:text-white")}
+          >
+            {labels[value]}
+          </Link>
+        );
+      })}
+    </>
+  );
+}
+
+// useSearchParams necesita Suspense (Next 15) → aislado aquí.
+function NavTabs({ home, onHome, labels }: { home: string; onHome: boolean; labels: Record<Tab, string> }) {
+  const searchParams = useSearchParams();
+  const currentFilter = (searchParams.get("t") as Tab | null) ?? "all";
+  return <TabLinks home={home} onHome={onHome} labels={labels} currentFilter={currentFilter} />;
+}
 
 export function Navbar() {
   const t = useTranslations("nav");
   const locale = useLocale();
   const scrolled = useScrolled();
   const { user } = useAuth();
-  const [active, setActive] = useState<Tab>("all");
+  const pathname = usePathname();
 
-  const TABS: { label: string; value: Tab }[] = [
-    { label: t("all"), value: "all" },
-    { label: t("movies"), value: "movie" },
-    { label: t("series"), value: "series" },
-    { label: t("anime"), value: "anime" },
-  ];
+  const home = `/${locale}`;
+  const onHome = pathname === home || pathname === `${home}/`;
+  const onLive = pathname.startsWith(`${home}/live`);
+  const labels: Record<Tab, string> = {
+    all: t("all"),
+    movie: t("movies"),
+    series: t("series"),
+    anime: t("anime"),
+  };
 
   return (
     <header
@@ -36,35 +81,27 @@ export function Navbar() {
     >
       <nav className="mx-auto flex h-16 max-w-screen-2xl items-center gap-4 px-4 md:px-8 tv:h-20 tv:px-16">
         <Link
-          href={`/${locale}`}
+          href={home}
           className="mr-2 flex-shrink-0 text-xl font-bold tracking-tight select-none tv:text-2xl"
         >
           Film<span className="text-primary">Space</span>
         </Link>
 
         <div className="flex gap-0.5">
-          {TABS.map((tab) => (
-            <button
-              key={tab.value}
-              onClick={() => setActive(tab.value)}
-              className={cn(
-                "rounded-md px-3 py-1.5 text-sm font-medium transition-colors duration-150",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-black",
-                "tv:px-4 tv:py-2 tv:text-base",
-                active === tab.value ? "bg-white/10 text-white" : "text-white/55 hover:text-white"
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
+          <Suspense
+            fallback={<TabLinks home={home} onHome={onHome} labels={labels} currentFilter="all" />}
+          >
+            <NavTabs home={home} onHome={onHome} labels={labels} />
+          </Suspense>
 
           {/* En vivo (IPTV) — navega a /live */}
           <Link
-            href={`/${locale}/live`}
+            href={`${home}/live`}
             className={cn(
-              "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium text-white/55 transition-colors duration-150",
+              "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors duration-150",
               "hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-black",
-              "tv:px-4 tv:py-2 tv:text-base"
+              "tv:px-4 tv:py-2 tv:text-base",
+              onLive ? "bg-white/10 text-white" : "text-white/55"
             )}
           >
             <IconBroadcast size={16} className="text-primary" />
@@ -77,7 +114,7 @@ export function Navbar() {
 
           {/* Search — navega a /search */}
           <Link
-            href={`/${locale}/search`}
+            href={`${home}/search`}
             className={cn(
               "rounded-full p-2 text-white/60 transition-colors duration-150",
               "hover:bg-white/10 hover:text-white",
@@ -89,7 +126,7 @@ export function Navbar() {
           </Link>
 
           <Link
-            href={user ? `/${locale}/profile` : `/${locale}/auth`}
+            href={user ? `${home}/profile` : `${home}/auth`}
             className={cn(
               "rounded-full p-2 text-white/60 transition-colors duration-150",
               "hover:bg-white/10 hover:text-white",
