@@ -23,12 +23,15 @@ import { VideoPlayer } from "@/components/player/VideoPlayer";
 
 const MAX_VISIBLE = 500; // ponytail: listas M3U pueden traer miles; el filtro por categoría acota. Techo por si acaso.
 
+// Lista por defecto: la app carga sola al entrar; el usuario no pega nada (solo si quiere cambiarla).
+const DEFAULT_SOURCE = "https://iptv-org.github.io/iptv/languages/spa.m3u";
+
 export function LiveTV() {
   const t = useTranslations("live");
 
   const [url, setUrl] = useState("");
   const [channels, setChannels] = useState<IPTVChannel[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // arranca cargando: nunca se ve el form al entrar
   const [error, setError] = useState(false);
   const [category, setCategory] = useState("__all__");
   const [query, setQuery] = useState("");
@@ -49,13 +52,11 @@ export function LiveTV() {
     }
   }
 
-  // Carga automática si ya hay una lista guardada
+  // Carga automática al entrar: lista guardada o la de por defecto (nunca vista vacía).
   useEffect(() => {
-    const saved = getSource();
-    if (saved) {
-      setUrl(saved);
-      load(saved);
-    }
+    const saved = getSource() || DEFAULT_SOURCE;
+    setUrl(saved);
+    load(saved);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -94,7 +95,17 @@ export function LiveTV() {
     );
   }
 
-  // ── Pantalla vacía: pedir la lista ───────────────────────────────
+  // ── Cargando (automático al entrar): solo un loading, sin formulario ──
+  if (!channels.length && loading) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-bg px-4">
+        <div className="h-12 w-12 rounded-full border-2 border-white/15 border-t-primary animate-spin tv:h-16 tv:w-16" />
+        <p className="text-sm text-white/50 tv:text-base">{t("loading")}</p>
+      </main>
+    );
+  }
+
+  // ── Formulario: solo si falla la carga automática o el usuario pide cambiar la lista ──
   if (!channels.length) {
     return (
       <main className="min-h-screen bg-bg px-4 pt-24 pb-16 md:px-8 tv:px-16 tv:pt-32">
