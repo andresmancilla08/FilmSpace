@@ -31,6 +31,10 @@ import { VideoPlayer } from "@/components/player/VideoPlayer";
 
 const MAX_VISIBLE = 600;
 const FEATURED = 3;
+
+// Búsqueda tolerante: sin acentos + ignora palabras de relleno ("canal caracol" → "caracol").
+const normalize = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+const SEARCH_STOP = new Set(["canal", "tv", "hd", "fhd", "uhd", "sd", "channel", "tele", "el", "la", "los", "las", "de"]);
 const FEAT_BG = [
   "linear-gradient(135deg,#2a0d10,#141414)",
   "linear-gradient(135deg,#1a1030,#141414)",
@@ -186,13 +190,18 @@ export function LiveTV() {
   }, [channels, rawCats, tab, vodCategoryList]);
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const nq = normalize(query.trim());
+    const raw = nq ? nq.split(/\s+/).filter(Boolean) : [];
+    const meaningful = raw.filter((tk) => !SEARCH_STOP.has(tk) && tk.length >= 2);
+    const terms = meaningful.length ? meaningful : raw;
+    const nameOk = (name: string) => {
+      if (!terms.length) return true;
+      const n = normalize(name);
+      return terms.every((tk) => n.includes(tk));
+    };
     return channels.filter((c) => {
-      if (isVod(tab)) return !q || c.name.toLowerCase().includes(q);
-      return (
-        (category === "__all__" || bucketOf(c) === category) &&
-        (!q || c.name.toLowerCase().includes(q))
-      );
+      if (isVod(tab)) return nameOk(c.name);
+      return (category === "__all__" || bucketOf(c) === category) && nameOk(c.name);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [channels, category, query, rawCats, tab]);
