@@ -28,7 +28,8 @@ export async function GET(req: NextRequest) {
     const upstream = await fetch(target, {
       // muchos proveedores exigen un User-Agent de reproductor
       headers: { "User-Agent": "VLC/3.0.20 LibVLC/3.0.20" },
-      signal: AbortSignal.timeout(20000),
+      // VOD Xtream (get_vod_streams) puede ser grande; 60s evita cortes en catálogos densos
+      signal: AbortSignal.timeout(60000),
     });
     if (!upstream.ok) return new Response(`upstream ${upstream.status}`, { status: 502 });
     return new Response(await upstream.text(), {

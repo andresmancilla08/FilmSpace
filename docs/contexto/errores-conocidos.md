@@ -15,5 +15,6 @@
 - **Síntoma:** los canales aparecen pero al darle play falla. **Causa:** el proveedor no envía cabeceras CORS y el navegador bloquea los segmentos. **Solución (a propósito):** el player intenta directo y, si falla, reintenta vía `/api/stream` (proxy). Si aun así falla, la fuente no sirve para web.
 - **Coste:** todo lo que pase por `/api/stream` consume banda/CPU de Vercel. Vídeo pesa (~2-4 GB/h HD) → uso intensivo puede superar el plan gratis. Por eso el proxy es último recurso, no la vía por defecto.
 
-### Catálogo: la app no trae contenido (igual que Xuper)
-- **A propósito:** FilmSpace/Xuper son reproductores; el catálogo lo trae la lista del usuario. Fuentes legales: IPTV-org y FAST gratis (Pluto, Samsung TV Plus, RTVE…) para TV; Internet Archive (ya integrado en `lib/archive.ts`) y Jellyfin propio para pelis/series. Las listas "todo incluido" de pago barato son pirata (ilegal).
+### Catálogo: la app no trae contenido pirata (igual que Xuper)
+- **A propósito:** FilmSpace/Xuper son reproductores; el catálogo VOD lo trae la lista del usuario (Xtream/M3U). Fuentes legales embebidas: IPTV-org y FAST (Pluto, Samsung TV Plus…) para TV en vivo; Internet Archive para clásicos. Las listas "todo incluido" de pago barato son pirata (ilegal) y no se integran.
+- **Cómo usar VOD:** en `/live` → pestaña Películas o Series → botón + → pegar URL `get.php?username=…&password=…` o `player_api.php` del panel.
