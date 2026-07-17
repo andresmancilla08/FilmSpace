@@ -72,14 +72,25 @@ export function VideoPlayer({
   const [feedback, setFeedback] = useState<"play" | "pause" | null>(null);
   const [dragging, setDragging] = useState(false);
 
-  // Fuente activa: empieza directa; cae al proxy solo si el navegador la bloquea (ahorra banda del servidor).
-  const [src, setSrc] = useState(videoUrl);
-  const triedProxy = useRef(false);
+  // Fuente activa: directa por defecto (ahorra banda). Pero si la página es https y el stream
+  // es http, el navegador SIEMPRE bloquea la directa (mixed content) → arrancamos ya por el proxy.
+  const pickSrc = (u: string): { src: string; proxied: boolean } =>
+    proxyUrl &&
+    typeof window !== "undefined" &&
+    window.location.protocol === "https:" &&
+    u.startsWith("http:")
+      ? { src: proxyUrl, proxied: true }
+      : { src: u, proxied: false };
+
+  const [src, setSrc] = useState(() => pickSrc(videoUrl).src);
+  const triedProxy = useRef(pickSrc(videoUrl).proxied);
   const autoStarted = useRef(false);
   useEffect(() => {
-    setSrc(videoUrl);
-    triedProxy.current = false;
+    const p = pickSrc(videoUrl);
+    setSrc(p.src);
+    triedProxy.current = p.proxied;
     autoStarted.current = false;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoUrl]);
 
   // Arranca la reproducción una vez por fuente. Autoplay con sonido suele estar bloqueado
@@ -166,7 +177,17 @@ export function VideoPlayer({
         const Hls = (await import("hls.js")).default;
         if (destroyed) return;
         if (Hls.isSupported()) {
-          const hls = new Hls({ enableWorker: true, lowLatencyMode: live });
+          const hls = new Hls({
+            enableWorker: true,
+            lowLatencyMode: live,
+            // Fallo rápido: si la fuente directa no responde, caemos al proxy en ~3.5s
+            // en vez de esperar los reintentos por defecto (10–30s).
+            manifestLoadingTimeOut: 3500,
+            manifestLoadingMaxRetry: 0,
+            levelLoadingTimeOut: 3500,
+            levelLoadingMaxRetry: 0,
+            fragLoadingTimeOut: 8000,
+          });
           hls.on(Hls.Events.ERROR, (_e, data) => {
             if (data.fatal) tryFallback();
           });
