@@ -12,6 +12,8 @@
     "@tabler/icons-react": "^3.34.0",
     "clsx": "^2.1.1",
     "framer-motion": "^11.18.2",
+    "hls.js": "^1.6.16",
+    "mpegts.js": "^1.8.0",
     "next": "^15.3.3",
     "next-intl": "^4.13.0",
     "react": "^19.0.0",

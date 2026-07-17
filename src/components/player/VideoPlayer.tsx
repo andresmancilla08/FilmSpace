@@ -23,6 +23,14 @@ interface VideoPlayerProps {
   backHref: string;
   videoUrl?: string;
   backdrop?: string;
+  /** Emisión en directo: oculta barra de progreso/tiempo y muestra badge EN VIVO */
+  live?: boolean;
+  /** Tipo de stream; si no se indica se infiere de la extensión de videoUrl */
+  streamType?: "hls" | "mpegts" | "file";
+  /** URL de reserva (proxy) que se usa solo si la directa la bloquea el navegador (CORS) */
+  proxyUrl?: string;
+  /** Si se pasa, el botón atrás lo llama en vez de navegar (para reproductor embebido) */
+  onClose?: () => void;
 }
 
 function fmt(s: number) {
@@ -40,6 +48,10 @@ export function VideoPlayer({
   backHref,
   videoUrl = DEMO_VIDEO,
   backdrop,
+  live = false,
+  streamType,
+  proxyUrl,
+  onClose,
 }: VideoPlayerProps) {
   const t = useTranslations("player");
   const router = useRouter();
@@ -59,6 +71,21 @@ export function VideoPlayer({
   const [buffering, setBuffering] = useState(true);
   const [feedback, setFeedback] = useState<"play" | "pause" | null>(null);
   const [dragging, setDragging] = useState(false);
+
+  // Fuente activa: empieza directa; cae al proxy solo si el navegador la bloquea (ahorra banda del servidor).
+  const [src, setSrc] = useState(videoUrl);
+  const triedProxy = useRef(false);
+  useEffect(() => {
+    setSrc(videoUrl);
+    triedProxy.current = false;
+  }, [videoUrl]);
+
+  const tryFallback = useCallback(() => {
+    if (proxyUrl && !triedProxy.current) {
+      triedProxy.current = true;
+      setSrc(proxyUrl);
+    }
+  }, [proxyUrl]);
 
   // Auto-hide controls after 3s
   const scheduleHide = useCallback(() => {
@@ -90,6 +117,61 @@ export function VideoPlayer({
     return () => document.removeEventListener("fullscreenchange", onFsChange);
   }, []);
 
+  // Adjunta el motor de reproducción según el tipo de stream (HLS / MPEG-TS / archivo).
+  // Los libs pesados (hls.js, mpegts.js) se cargan dinámicamente solo cuando hacen falta.
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v || !src) return;
+    let destroyed = false;
+    let cleanup = () => {};
+
+    const type =
+      streamType ??
+      (/\.m3u8(\?|#|$)/i.test(src)
+        ? "hls"
+        : /\.ts(\?|#|$)/i.test(src)
+          ? "mpegts"
+          : "file");
+
+    async function attach() {
+      if (!v) return;
+      const native = v.canPlayType("application/vnd.apple.mpegurl");
+      if (type === "mpegts") {
+        const mpegts = (await import("mpegts.js")).default;
+        if (destroyed) return;
+        if (mpegts.isSupported()) {
+          const p = mpegts.createPlayer({ type: "mpegts", isLive: live, url: src });
+          p.attachMediaElement(v);
+          p.on(mpegts.Events.ERROR, tryFallback);
+          p.load();
+          cleanup = () => p.destroy();
+          return;
+        }
+      } else if (type === "hls" && !native) {
+        const Hls = (await import("hls.js")).default;
+        if (destroyed) return;
+        if (Hls.isSupported()) {
+          const hls = new Hls({ enableWorker: true, lowLatencyMode: live });
+          hls.on(Hls.Events.ERROR, (_e, data) => {
+            if (data.fatal) tryFallback();
+          });
+          hls.loadSource(src);
+          hls.attachMedia(v);
+          cleanup = () => hls.destroy();
+          return;
+        }
+      }
+      v.src = src; // mp4 o HLS nativo (Safari); onError del <video> dispara el fallback
+    }
+
+    setBuffering(true);
+    attach();
+    return () => {
+      destroyed = true;
+      cleanup();
+    };
+  }, [src, streamType, live, tryFallback]);
+
   // Keyboard shortcuts — handled inside the player
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -103,11 +185,13 @@ export function VideoPlayer({
           togglePlay();
           break;
         case "ArrowRight":
+          if (live) break; // no se busca en directo
           e.preventDefault();
           v.currentTime = Math.min(v.duration, v.currentTime + 10);
           showAndScheduleHide();
           break;
         case "ArrowLeft":
+          if (live) break; // no se busca en directo
           e.preventDefault();
           v.currentTime = Math.max(0, v.currentTime - 10);
           showAndScheduleHide();
@@ -137,7 +221,8 @@ export function VideoPlayer({
         case "Escape":
           if (!fullscreen) {
             e.preventDefault();
-            router.back();
+            if (onClose) onClose();
+            else router.back();
           }
           break;
       }
@@ -145,7 +230,7 @@ export function VideoPlayer({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [playing, fullscreen, showAndScheduleHide]);
+  }, [playing, fullscreen, live, onClose, showAndScheduleHide]);
 
   function togglePlay() {
     const v = videoRef.current;
@@ -214,10 +299,10 @@ export function VideoPlayer({
       {/* Video */}
       <video
         ref={videoRef}
-        src={videoUrl}
         className="absolute inset-0 w-full h-full object-contain"
         preload="metadata"
         playsInline
+        onError={tryFallback}
         onClick={togglePlay}
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
@@ -284,7 +369,7 @@ export function VideoPlayer({
             <div className="bg-gradient-to-b from-black/75 to-transparent px-4 py-4 pointer-events-auto tv:px-10 tv:py-6">
               <div className="flex items-center gap-4">
                 <button
-                  onClick={() => router.push(backHref)}
+                  onClick={() => (onClose ? onClose() : router.push(backHref))}
                   data-dpad
                   className={cn(
                     "flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 backdrop-blur-sm px-3.5 py-2",
@@ -299,6 +384,13 @@ export function VideoPlayer({
                   {t("back")}
                 </button>
 
+                {live && (
+                  <span className="flex items-center gap-1.5 rounded-full bg-primary/90 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white tv:text-sm">
+                    <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+                    {t("live")}
+                  </span>
+                )}
+
                 <div className="flex flex-col min-w-0">
                   <span className="text-sm font-bold text-white truncate tv:text-lg">{title}</span>
                   {subtitle && (
@@ -308,16 +400,19 @@ export function VideoPlayer({
               </div>
             </div>
 
-            {/* Demo note */}
-            <div className="flex justify-center pointer-events-none">
-              <span className="rounded-full bg-black/40 backdrop-blur-sm px-3 py-1 text-[10px] text-white/30 border border-white/5">
-                {t("demoNote")}
-              </span>
-            </div>
+            {/* Demo note — solo para el reproductor de demo, no en directo */}
+            {!live && (
+              <div className="flex justify-center pointer-events-none">
+                <span className="rounded-full bg-black/40 backdrop-blur-sm px-3 py-1 text-[10px] text-white/30 border border-white/5">
+                  {t("demoNote")}
+                </span>
+              </div>
+            )}
 
             {/* Bottom controls */}
             <div className="bg-gradient-to-t from-black/85 to-transparent px-4 pb-5 pt-8 pointer-events-auto tv:px-10 tv:pb-8 tv:pt-14">
-              {/* Progress bar */}
+              {/* Progress bar — oculta en directo */}
+              {!live && (
               <div
                 ref={progressRef}
                 role="slider"
@@ -367,6 +462,7 @@ export function VideoPlayer({
                   </div>
                 </div>
               </div>
+              )}
 
               {/* Buttons row */}
               <div className="flex items-center gap-3 tv:gap-5">
@@ -395,12 +491,18 @@ export function VideoPlayer({
                   )}
                 </button>
 
-                {/* Time */}
-                <span className="text-xs tabular-nums text-white/65 tv:text-sm">
-                  {fmt(currentTime)}
-                  <span className="mx-1 text-white/30">/</span>
-                  {fmt(duration)}
-                </span>
+                {/* Time — en directo se muestra "EN VIVO" en su lugar */}
+                {live ? (
+                  <span className="text-xs font-semibold uppercase tracking-wide text-primary tv:text-sm">
+                    {t("live")}
+                  </span>
+                ) : (
+                  <span className="text-xs tabular-nums text-white/65 tv:text-sm">
+                    {fmt(currentTime)}
+                    <span className="mx-1 text-white/30">/</span>
+                    {fmt(duration)}
+                  </span>
+                )}
 
                 <div className="ml-auto flex items-center gap-2 tv:gap-4">
                   {/* Mute */}

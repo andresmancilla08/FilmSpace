@@ -5,7 +5,8 @@
     "series": "Series",
     "anime": "Anime",
     "searchLabel": "Buscar",
-    "profileLabel": "Perfil"
+    "profileLabel": "Perfil",
+    "live": "En vivo"
   },
   "hero": {
     "play": "Reproducir",
@@ -73,7 +74,8 @@
     "loading": "Cargando...",
     "demoNote": "Contenido demo — Big Buck Bunny",
     "seekForward": "+10s",
-    "seekBack": "-10s"
+    "seekBack": "-10s",
+    "live": "En vivo"
   },
   "profile": {
     "title": "Perfil",
@@ -90,5 +92,21 @@
     "goToSignIn": "Iniciar sesión",
     "welcomeBack": "Bienvenido de nuevo",
     "browseContent": "Explorar contenido"
+  },
+  "live": {
+    "title": "En vivo",
+    "addSource": "Añade tu lista de canales",
+    "sourceHint": "Pega la URL de tu lista M3U o Xtream (get.php)",
+    "urlPlaceholder": "http://tu-proveedor/get.php?username=...",
+    "load": "Cargar canales",
+    "loading": "Cargando...",
+    "change": "Cambiar lista",
+    "search": "Buscar canal",
+    "all": "Todos",
+    "live": "En vivo",
+    "channels": "{count} canales",
+    "noChannels": "No hay canales en esta categoría",
+    "error": "No se pudo cargar la lista. Revisa la URL.",
+    "legal": "Usa solo listas propias o con licencia."
   }
 }

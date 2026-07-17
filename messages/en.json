@@ -5,7 +5,8 @@
     "series": "Series",
     "anime": "Anime",
     "searchLabel": "Search",
-    "profileLabel": "Profile"
+    "profileLabel": "Profile",
+    "live": "Live"
   },
   "hero": {
     "play": "Play",
@@ -73,7 +74,8 @@
     "loading": "Loading...",
     "demoNote": "Demo content — Big Buck Bunny",
     "seekForward": "+10s",
-    "seekBack": "-10s"
+    "seekBack": "-10s",
+    "live": "Live"
   },
   "profile": {
     "title": "Profile",
@@ -90,5 +92,21 @@
     "goToSignIn": "Sign In",
     "welcomeBack": "Welcome back",
     "browseContent": "Browse Content"
+  },
+  "live": {
+    "title": "Live TV",
+    "addSource": "Add your channel list",
+    "sourceHint": "Paste your M3U or Xtream (get.php) list URL",
+    "urlPlaceholder": "http://your-provider/get.php?username=...",
+    "load": "Load channels",
+    "loading": "Loading...",
+    "change": "Change list",
+    "search": "Search channel",
+    "all": "All",
+    "live": "Live",
+    "channels": "{count} channels",
+    "noChannels": "No channels in this category",
+    "error": "Could not load the list. Check the URL.",
+    "legal": "Use only your own or licensed lists."
   }
 }

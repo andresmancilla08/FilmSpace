@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
-import { IconSearch, IconUser } from "@tabler/icons-react";
+import { IconSearch, IconUser, IconBroadcast } from "@tabler/icons-react";
 import { useTranslations, useLocale } from "next-intl";
 import { cn } from "@/lib/utils";
 import { useScrolled } from "@/hooks/useScrolled";
@@ -57,6 +57,19 @@ export function Navbar() {
               {tab.label}
             </button>
           ))}
+
+          {/* En vivo (IPTV) — navega a /live */}
+          <Link
+            href={`/${locale}/live`}
+            className={cn(
+              "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium text-white/55 transition-colors duration-150",
+              "hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-black",
+              "tv:px-4 tv:py-2 tv:text-base"
+            )}
+          >
+            <IconBroadcast size={16} className="text-primary" />
+            {t("live")}
+          </Link>
         </div>
 
         <div className="ml-auto flex items-center gap-2">

@@ -17,6 +17,13 @@ export interface Genre {
   name: string;
 }
 
+export interface IPTVChannel {
+  name: string;
+  logo: string;
+  group: string;
+  url: string;
+}
+
 export interface CastMember {
   id: number;
   name: string;
