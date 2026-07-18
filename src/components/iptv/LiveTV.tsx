@@ -471,26 +471,28 @@ export function LiveTV() {
             ))}
           </div>
 
-          <div className="relative ml-auto">
-            <IconSearch
-              size={16}
-              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/40"
-            />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={isVod(tab) ? t("searchVod") : t("search")}
-              className="w-44 rounded-full border border-white/10 bg-surface py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-white/30 focus:border-primary focus:outline-none md:w-72"
-            />
+          <div className="flex w-full items-center gap-2 sm:ml-auto sm:w-auto">
+            <div className="relative min-w-0 flex-1 sm:flex-none">
+              <IconSearch
+                size={16}
+                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/40"
+              />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={isVod(tab) ? t("searchVod") : t("search")}
+                className="w-full rounded-full border border-white/10 bg-surface py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-white/30 focus:border-primary focus:outline-none sm:w-56 md:w-72"
+              />
+            </div>
+            <button
+              data-dpad
+              onClick={() => setAddOpen((v) => !v)}
+              aria-label={t("addList")}
+              className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full border border-white/10 bg-surface text-white/60 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              {addOpen ? <IconX size={18} /> : <IconPlus size={18} />}
+            </button>
           </div>
-          <button
-            data-dpad
-            onClick={() => setAddOpen((v) => !v)}
-            aria-label={t("addList")}
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-surface text-white/60 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            {addOpen ? <IconX size={18} /> : <IconPlus size={18} />}
-          </button>
         </div>
 
         {addOpen && (

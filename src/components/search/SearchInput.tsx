@@ -71,7 +71,7 @@ export function SearchInput({ value, onChange, loading, compact }: SearchInputPr
               className={cn(
                 "min-w-0 flex-1 bg-transparent font-semibold text-white outline-none",
                 "placeholder:text-white/20 transition-all duration-300",
-                compact ? "text-2xl md:text-3xl" : "text-3xl md:text-5xl"
+                compact ? "text-xl sm:text-2xl md:text-3xl" : "text-2xl sm:text-4xl md:text-5xl"
               )}
             />
             <AnimatePresence>

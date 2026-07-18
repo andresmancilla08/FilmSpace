@@ -41,7 +41,7 @@ export function HeroFeatured({ media }: HeroFeaturedProps) {
       <div className="absolute inset-0 bg-gradient-to-r from-[#0a0a0a]/85 via-[#0a0a0a]/25 to-transparent" />
 
       <div className="absolute inset-0 flex flex-col justify-end px-6 pb-20 md:px-12 md:pb-24 tv:px-24 tv:pb-32">
-        <div className="max-w-xl tv:max-w-3xl">
+        <div className="w-full min-w-0 max-w-xl tv:max-w-3xl">
           <motion.div {...item(0)} className="mb-3 flex items-center gap-2.5">
             <span className="rounded-sm bg-primary px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-white">
               {tc(media.type)}
@@ -78,7 +78,7 @@ export function HeroFeatured({ media }: HeroFeaturedProps) {
             {media.overview}
           </motion.p>
 
-          <motion.div {...item(0.23)} className="flex gap-3">
+          <motion.div {...item(0.23)} className="flex flex-wrap gap-3">
             <Link
               href={`/${locale}/watch/${media.id}?type=${media.type}`}
               className={cn(

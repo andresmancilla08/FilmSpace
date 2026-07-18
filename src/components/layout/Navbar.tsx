@@ -14,7 +14,7 @@ type Tab = ContentType | "all";
 const TAB_VALUES: Tab[] = ["all", "movie", "series", "anime"];
 
 const TAB_CLASS =
-  "rounded-md px-3 py-1.5 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-black tv:px-4 tv:py-2 tv:text-base";
+  "flex-shrink-0 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-black tv:px-4 tv:py-2 tv:text-base";
 
 // Presentacional: pinta los 4 tabs de filtro. `active` = home + filtro coincidente.
 function TabLinks({
@@ -79,15 +79,15 @@ export function Navbar() {
           : "bg-gradient-to-b from-black/70 to-transparent"
       )}
     >
-      <nav className="mx-auto flex h-16 max-w-screen-2xl items-center gap-4 px-4 md:px-8 tv:h-20 tv:px-16">
+      <nav className="mx-auto flex h-16 max-w-screen-2xl items-center gap-3 px-4 md:gap-4 md:px-8 tv:h-20 tv:px-16">
         <Link
           href={home}
-          className="mr-2 flex-shrink-0 text-xl font-bold tracking-tight select-none tv:text-2xl"
+          className="flex-shrink-0 text-xl font-bold tracking-tight select-none tv:text-2xl"
         >
           Film<span className="text-primary">Space</span>
         </Link>
 
-        <div className="flex gap-0.5">
+        <div className="flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto scrollbar-none">
           <Suspense
             fallback={<TabLinks home={home} onHome={onHome} labels={labels} currentFilter="all" />}
           >
@@ -98,7 +98,7 @@ export function Navbar() {
           <Link
             href={`${home}/live`}
             className={cn(
-              "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors duration-150",
+              "flex flex-shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-colors duration-150",
               "hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-black",
               "tv:px-4 tv:py-2 tv:text-base",
               onLive ? "bg-white/10 text-white" : "text-white/55"
@@ -109,7 +109,7 @@ export function Navbar() {
           </Link>
         </div>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="flex flex-shrink-0 items-center gap-1 md:gap-2">
           <LanguageSelector />
 
           {/* Search — navega a /search */}
