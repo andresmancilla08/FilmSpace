@@ -408,7 +408,7 @@ export function VideoPlayer({
         onTimeUpdate={() => {
           const ct = videoRef.current?.currentTime ?? 0;
           setCurrentTime(ct);
-          if (ct > 0 && !startedPlaying.current) {
+          if (ct > 0) {
             startedPlaying.current = true;
             if (loadError) setLoadError(false);
           }
@@ -446,9 +446,10 @@ export function VideoPlayer({
         )}
       </AnimatePresence>
 
-      {/* Error de carga — canal caído/geo-bloqueado (no spinner infinito) */}
+      {/* Error de carga — canal caído/geo-bloqueado (no spinner infinito).
+          Guard duro: si hay progreso real (currentTime>0) el canal reproduce → nunca error. */}
       <AnimatePresence>
-        {loadError && (
+        {loadError && currentTime === 0 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
