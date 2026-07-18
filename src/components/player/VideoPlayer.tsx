@@ -72,45 +72,57 @@ export function VideoPlayer({
   const [feedback, setFeedback] = useState<"play" | "pause" | null>(null);
   const [dragging, setDragging] = useState(false);
 
-  // Fuente activa. Los streams http:// (IPs, iptv-org) el navegador casi nunca los reproduce
-  // directo (sin CORS, o mixed-content en https) y de todos modos acabarían en el proxy →
-  // arrancamos YA por el proxy (mismo ancho de banda, sin la espera del intento fallido).
-  // Los https:// se intentan directos primero (muchos funcionan y ahorran banda del server).
-  const pickSrc = (u: string): { src: string; proxied: boolean } =>
-    proxyUrl && u.startsWith("http://")
-      ? { src: proxyUrl, proxied: true }
-      : { src: u, proxied: false };
+  // Fuente activa. Los proveedores IPTV (live HLS/MPEG-TS) casi nunca mandan cabeceras CORS,
+  // así que hls.js/mpegts.js NO pueden leer el manifiesto directo desde el navegador → SIEMPRE
+  // acaba en el proxy. Intentar directo primero solo añade ~3.5s de fallo garantizado + una
+  // reconstrucción del motor que aborta el play() en curso (AbortError) → el canal no arranca.
+  // Por eso, para live arrancamos YA por el proxy. Los archivos (mp4/VOD) sí van directos.
+  // ponytail: proxy-first prioriza fiabilidad sobre banda del server; para uso familiar OK.
+  const pickSrc = useCallback(
+    (u: string): { src: string; proxied: boolean } => {
+      const isLive = live || streamType === "hls" || streamType === "mpegts";
+      return proxyUrl && (isLive || u.startsWith("http://"))
+        ? { src: proxyUrl, proxied: true }
+        : { src: u, proxied: false };
+    },
+    [proxyUrl, live, streamType]
+  );
 
   const [src, setSrc] = useState(() => pickSrc(videoUrl).src);
-  const triedProxy = useRef(pickSrc(videoUrl).proxied);
+  const triedFallback = useRef(false);
   const autoStarted = useRef(false);
   useEffect(() => {
     const p = pickSrc(videoUrl);
     setSrc(p.src);
-    triedProxy.current = p.proxied;
+    triedFallback.current = false;
     autoStarted.current = false;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [videoUrl]);
+  }, [videoUrl, pickSrc]);
 
   // Arranca la reproducción una vez por fuente. Autoplay con sonido suele estar bloqueado
   // → si el navegador lo rechaza, reintenta silenciado (el usuario puede desmutear).
+  // Los rechazos (AbortError si el motor se reconstruye, NotAllowedError por política de
+  // autoplay) se tragan: son esperables y no deben romper la UI.
   const autoPlay = useCallback(() => {
     const v = videoRef.current;
     if (!v || autoStarted.current) return;
     autoStarted.current = true;
     v.play().catch(() => {
-      v.muted = true;
+      const vv = videoRef.current;
+      if (!vv) return;
+      vv.muted = true;
       setMuted(true);
-      v.play().catch(() => {});
+      vv.play().catch(() => {});
     });
   }, []);
 
+  // Cambia a la fuente alternativa una sola vez: si arrancamos por proxy y falla,
+  // probamos directo (raro: proxy caído pero CORS ok), y viceversa.
   const tryFallback = useCallback(() => {
-    if (proxyUrl && !triedProxy.current) {
-      triedProxy.current = true;
-      setSrc(proxyUrl);
-    }
-  }, [proxyUrl]);
+    if (triedFallback.current) return;
+    triedFallback.current = true;
+    setSrc((cur) => (cur === proxyUrl ? videoUrl : proxyUrl ?? videoUrl));
+    autoStarted.current = false;
+  }, [proxyUrl, videoUrl]);
 
   // Auto-hide controls after 3s
   const scheduleHide = useCallback(() => {
@@ -271,7 +283,7 @@ export function VideoPlayer({
     const v = videoRef.current;
     if (!v) return;
     if (v.paused) {
-      v.play();
+      v.play().catch(() => {});
     } else {
       v.pause();
     }
@@ -337,6 +349,7 @@ export function VideoPlayer({
         className="absolute inset-0 w-full h-full object-contain"
         preload="metadata"
         playsInline
+        autoPlay
         onError={tryFallback}
         onClick={togglePlay}
         onPlay={() => setPlaying(true)}
