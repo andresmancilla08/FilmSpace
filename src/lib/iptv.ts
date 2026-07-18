@@ -45,6 +45,9 @@ export const PROVIDERS: Provider[] = [
   fast("pluto-mx", "live", "plutotv_mx"),
   fast("pluto-ar", "live", "plutotv_ar"),
   fast("pluto-cl", "live", "plutotv_cl"),
+  // FAST US: más deporte legal etiquetado por género (Samsung ~69, Pluto ~26), sin geo-block
+  fast("samsung-us", "live", "samsungtvplus_us"),
+  fast("pluto-us", "live", "plutotv_us"),
   iptvRegion("amer"), // iptv-org: región Américas (Latam + Norteamérica)
   // ── En vivo — resto del mundo (catálogo completo iptv-org + FAST todas las regiones) ──
   { id: "iptv-all", tab: "live", url: `${IPTV}/index.m3u` }, // iptv-org COMPLETO (~13k)
@@ -154,6 +157,19 @@ export function parseM3U(text: string): IPTVChannel[] {
   return out;
 }
 
+// Canales curados siempre-activos (verificados). Fuentes oficiales/gratuitas del propio
+// emisor — legales, sin DRM ni geo-block. Se muestran al frente del directo.
+const CURATED_LIVE: IPTVChannel[] = [
+  {
+    name: "Red Bull TV",
+    logo: "https://i.imgur.com/1G1jJb3.png",
+    group: "Sports",
+    url: "https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master.m3u8",
+    category: "sports",
+    kind: "live",
+  },
+];
+
 // ───────────────────────── Descarga (vía proxy propio, evita CORS) ─────────────────────────
 export async function fetchPlaylist(url: string): Promise<IPTVChannel[]> {
   const res = await fetch(`/api/iptv?url=${encodeURIComponent(url)}`);
@@ -170,13 +186,12 @@ export async function fetchTab(tab: "live" | "247" | "radio"): Promise<IPTVChann
   const results = await Promise.allSettled(urls.map(fetchPlaylist));
   const seen = new Set<string>();
   const merged: IPTVChannel[] = [];
-  for (const r of results) {
-    if (r.status !== "fulfilled") continue;
-    for (const c of r.value) {
-      if (seen.has(c.url)) continue;
-      seen.add(c.url);
-      merged.push(c);
-    }
+  // Curados al frente (solo en directo), luego el resto de proveedores.
+  const initial = tab === "live" ? CURATED_LIVE : [];
+  for (const c of [...initial, ...results.flatMap((r) => (r.status === "fulfilled" ? r.value : []))]) {
+    if (seen.has(c.url)) continue;
+    seen.add(c.url);
+    merged.push(c);
   }
   if (!merged.length) throw new Error("empty");
   return merged;
