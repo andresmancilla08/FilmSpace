@@ -10,6 +10,8 @@ import {
   IconVolumeOff,
   IconMaximize,
   IconMinimize,
+  IconAlertTriangle,
+  IconRefresh,
 } from "@tabler/icons-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
@@ -89,13 +91,18 @@ export function VideoPlayer({
   );
 
   const [src, setSrc] = useState(() => pickSrc(videoUrl).src);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const triedFallback = useRef(false);
   const autoStarted = useRef(false);
+  const startedPlaying = useRef(false);
   useEffect(() => {
     const p = pickSrc(videoUrl);
     setSrc(p.src);
+    setLoadError(false);
     triedFallback.current = false;
     autoStarted.current = false;
+    startedPlaying.current = false;
   }, [videoUrl, pickSrc]);
 
   // Arranca la reproducción una vez por fuente. Autoplay con sonido suele estar bloqueado
@@ -116,13 +123,29 @@ export function VideoPlayer({
   }, []);
 
   // Cambia a la fuente alternativa una sola vez: si arrancamos por proxy y falla,
-  // probamos directo (raro: proxy caído pero CORS ok), y viceversa.
+  // probamos directo (raro: proxy caído pero CORS ok). Si ya no hay alternativa y
+  // nunca arrancó, el canal está caído/geo-bloqueado → mostramos error (no spinner infinito).
   const tryFallback = useCallback(() => {
-    if (triedFallback.current) return;
-    triedFallback.current = true;
-    setSrc((cur) => (cur === proxyUrl ? videoUrl : proxyUrl ?? videoUrl));
-    autoStarted.current = false;
+    if (startedPlaying.current) return; // ya reproducía; un error tardío no debe romper
+    if (!triedFallback.current && proxyUrl && videoUrl !== proxyUrl) {
+      triedFallback.current = true;
+      setSrc((cur) => (cur === proxyUrl ? videoUrl : proxyUrl));
+      autoStarted.current = false;
+    } else {
+      setLoadError(true);
+    }
   }, [proxyUrl, videoUrl]);
+
+  // Reintento manual: reinicia la fuente desde cero.
+  const retry = useCallback(() => {
+    const p = pickSrc(videoUrl);
+    triedFallback.current = false;
+    autoStarted.current = false;
+    startedPlaying.current = false;
+    setLoadError(false);
+    setSrc(p.src);
+    setReloadKey((k) => k + 1);
+  }, [videoUrl, pickSrc]);
 
   // Auto-hide controls after 3s
   const scheduleHide = useCallback(() => {
@@ -191,16 +214,23 @@ export function VideoPlayer({
           const hls = new Hls({
             enableWorker: true,
             lowLatencyMode: live,
-            // Fallo rápido: si la fuente directa no responde, caemos al proxy en ~3.5s
-            // en vez de esperar los reintentos por defecto (10–30s).
-            manifestLoadingTimeOut: 3500,
-            manifestLoadingMaxRetry: 0,
-            levelLoadingTimeOut: 3500,
-            levelLoadingMaxRetry: 0,
-            fragLoadingTimeOut: 8000,
+            // Proxy-first es la ruta primaria (Vercel añade latencia) → damos margen y
+            // dejamos que hls.js reintente antes de declarar el canal caído.
+            manifestLoadingTimeOut: 12000,
+            manifestLoadingMaxRetry: 3,
+            levelLoadingTimeOut: 12000,
+            levelLoadingMaxRetry: 4,
+            fragLoadingTimeOut: 25000,
+            fragLoadingMaxRetry: 6,
           });
           hls.on(Hls.Events.ERROR, (_e, data) => {
-            if (data.fatal) tryFallback();
+            if (!data.fatal) return;
+            // Errores de media a veces se recuperan sin recargar; los de red no.
+            if (data.type === Hls.ErrorTypes.MEDIA_ERROR && !startedPlaying.current) {
+              hls.recoverMediaError();
+              return;
+            }
+            tryFallback();
           });
           hls.loadSource(src);
           hls.attachMedia(v);
@@ -213,11 +243,17 @@ export function VideoPlayer({
 
     setBuffering(true);
     attach();
+    // Red de seguridad: si en 16s no arrancó (canal caído/geo-bloqueado/proxy sin datos),
+    // mostramos error en vez de un spinner eterno.
+    const watchdog = setTimeout(() => {
+      if (!destroyed && !startedPlaying.current) setLoadError(true);
+    }, 16000);
     return () => {
       destroyed = true;
+      clearTimeout(watchdog);
       cleanup();
     };
-  }, [src, streamType, live, tryFallback]);
+  }, [src, streamType, live, tryFallback, reloadKey]);
 
   // Keyboard shortcuts — handled inside the player
   useEffect(() => {
@@ -357,7 +393,11 @@ export function VideoPlayer({
         onTimeUpdate={() => setCurrentTime(videoRef.current?.currentTime ?? 0)}
         onDurationChange={() => setDuration(videoRef.current?.duration ?? 0)}
         onWaiting={() => setBuffering(true)}
-        onPlaying={() => setBuffering(false)}
+        onPlaying={() => {
+          startedPlaying.current = true;
+          setBuffering(false);
+          setLoadError(false);
+        }}
         onCanPlay={() => {
           setBuffering(false);
           autoPlay();
@@ -372,7 +412,7 @@ export function VideoPlayer({
 
       {/* Buffering spinner */}
       <AnimatePresence>
-        {buffering && (
+        {buffering && !loadError && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -380,6 +420,49 @@ export function VideoPlayer({
             className="absolute inset-0 flex items-center justify-center pointer-events-none"
           >
             <div className="h-12 w-12 rounded-full border-2 border-white/20 border-t-primary animate-spin tv:h-16 tv:w-16" />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Error de carga — canal caído/geo-bloqueado (no spinner infinito) */}
+      <AnimatePresence>
+        {loadError && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-black/60 px-6 text-center backdrop-blur-sm"
+          >
+            <IconAlertTriangle size={40} className="text-primary tv:h-14 tv:w-14" />
+            <div className="max-w-sm">
+              <p className="text-base font-bold text-white tv:text-xl">{t("unavailable")}</p>
+              <p className="mt-1.5 text-sm text-white/55 tv:text-base">{t("unavailableHint")}</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={retry}
+                data-dpad
+                className={cn(
+                  "flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-white",
+                  "transition-transform duration-150 active:scale-95",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 tv:text-base"
+                )}
+              >
+                <IconRefresh size={18} />
+                {t("retry")}
+              </button>
+              <button
+                onClick={() => (onClose ? onClose() : router.push(backHref))}
+                data-dpad
+                className={cn(
+                  "flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-6 py-3 text-sm font-semibold text-white/85",
+                  "transition-colors duration-150 hover:bg-white/20",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary tv:text-base"
+                )}
+              >
+                {t("back")}
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

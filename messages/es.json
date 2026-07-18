@@ -75,7 +75,10 @@
     "demoNote": "Contenido demo — Big Buck Bunny",
     "seekForward": "+10s",
     "seekBack": "-10s",
-    "live": "En vivo"
+    "live": "En vivo",
+    "unavailable": "Canal no disponible",
+    "unavailableHint": "Puede estar caído o con restricción geográfica. Prueba con otro.",
+    "retry": "Reintentar"
   },
   "profile": {
     "title": "Perfil",
