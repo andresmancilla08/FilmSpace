@@ -126,7 +126,8 @@ export function VideoPlayer({
   // probamos directo (raro: proxy caído pero CORS ok). Si ya no hay alternativa y
   // nunca arrancó, el canal está caído/geo-bloqueado → mostramos error (no spinner infinito).
   const tryFallback = useCallback(() => {
-    if (startedPlaying.current) return; // ya reproducía; un error tardío no debe romper
+    // ya reproducía (o hay progreso real); un error tardío no debe romper la UI
+    if (startedPlaying.current || (videoRef.current?.currentTime ?? 0) > 0) return;
     if (!triedFallback.current && proxyUrl && videoUrl !== proxyUrl) {
       triedFallback.current = true;
       setSrc((cur) => (cur === proxyUrl ? videoUrl : proxyUrl));
@@ -223,13 +224,26 @@ export function VideoPlayer({
             fragLoadingTimeOut: 25000,
             fragLoadingMaxRetry: 6,
           });
+          // Los streams live emiten errores fatales RECUPERABLES (stall de buffer, hueco de
+          // fragmento). Recuperamos primero (recomendación de hls.js); solo damos el canal
+          // por caído tras varios intentos fallidos SIN progreso de reproducción.
+          let netFails = 0;
+          let mediaFails = 0;
           hls.on(Hls.Events.ERROR, (_e, data) => {
             if (!data.fatal) return;
-            // Errores de media a veces se recuperan sin recargar; los de red no.
-            if (data.type === Hls.ErrorTypes.MEDIA_ERROR && !startedPlaying.current) {
-              hls.recoverMediaError();
-              return;
+            if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+              if (netFails++ < 4) {
+                hls.startLoad(); // reintenta cargar (manifiesto/nivel/fragmento)
+                return;
+              }
+            } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+              if (mediaFails++ < 3) {
+                hls.recoverMediaError();
+                return;
+              }
             }
+            // Agotados los reintentos: si ya hay reproducción real, no rompemos la UI.
+            if ((videoRef.current?.currentTime ?? 0) > 0) return;
             tryFallback();
           });
           hls.loadSource(src);
@@ -246,7 +260,8 @@ export function VideoPlayer({
     // Red de seguridad: si en 16s no arrancó (canal caído/geo-bloqueado/proxy sin datos),
     // mostramos error en vez de un spinner eterno.
     const watchdog = setTimeout(() => {
-      if (!destroyed && !startedPlaying.current) setLoadError(true);
+      if (!destroyed && !startedPlaying.current && (videoRef.current?.currentTime ?? 0) === 0)
+        setLoadError(true);
     }, 16000);
     return () => {
       destroyed = true;
@@ -390,7 +405,14 @@ export function VideoPlayer({
         onClick={togglePlay}
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
-        onTimeUpdate={() => setCurrentTime(videoRef.current?.currentTime ?? 0)}
+        onTimeUpdate={() => {
+          const ct = videoRef.current?.currentTime ?? 0;
+          setCurrentTime(ct);
+          if (ct > 0 && !startedPlaying.current) {
+            startedPlaying.current = true;
+            if (loadError) setLoadError(false);
+          }
+        }}
         onDurationChange={() => setDuration(videoRef.current?.duration ?? 0)}
         onWaiting={() => setBuffering(true)}
         onPlaying={() => {
