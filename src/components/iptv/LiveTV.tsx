@@ -446,7 +446,7 @@ export function LiveTV() {
         <div className="mb-7 flex flex-wrap items-center gap-3">
           <div
             role="tablist"
-            className="inline-flex max-w-full flex-wrap rounded-full border border-white/10 bg-surface p-1.5"
+            className="scrollbar-none flex max-w-full flex-nowrap overflow-x-auto rounded-full border border-white/10 bg-surface p-1.5"
           >
             {tabs.map(([key, label, dot]) => (
               <button
@@ -456,7 +456,7 @@ export function LiveTV() {
                 data-dpad
                 onClick={() => switchTab(key)}
                 className={cn(
-                  "flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-extrabold tracking-tight transition-all duration-150 sm:px-5",
+                  "flex flex-shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-extrabold tracking-tight transition-all duration-150 sm:px-5",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                   tab === key
                     ? "bg-primary text-white shadow-[0_6px_20px_rgba(229,9,20,0.35)]"

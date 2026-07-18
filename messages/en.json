@@ -41,7 +41,7 @@
     "source": "Source: Internet Archive"
   },
   "search": {
-    "placeholder": "Search movies, series, anime...",
+    "placeholder": "Search movies & series…",
     "noResults": "No results found",
     "noResultsHint": "Try a different search term",
     "trending": "Explore by genre",
