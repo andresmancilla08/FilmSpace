@@ -8,7 +8,7 @@
 
 🌐 **[filmspace-two.vercel.app](https://filmspace-two.vercel.app)** · Installable PWA · Web + Google TV
 
-> **FilmSpace hosts no media.** Catalog metadata comes from [TMDB](https://www.themoviedb.org/); playback sources are supplied by the person running the app (their own IPTV playlist or provider credentials). No content, playlist or link is bundled, and none is distributed with this repository.
+> **FilmSpace hosts no media.** Catalog metadata comes from [TMDB](https://www.themoviedb.org/). Live channels are aggregated from **open, free-to-air and FAST sources only** — [iptv-org](https://github.com/iptv-org/iptv), TDTChannels, Pluto TV, Samsung TV Plus — and users can add their own M3U playlist or Xtream credentials. No paywalled or unlicensed source is bundled.
 
 ---
 
@@ -23,7 +23,9 @@ Every streaming UI is built for one input device. A remote-driven 10-foot UI and
 - Metadata via TMDB, localized EN / ES
 
 **Live TV (`/live`)**
-- Load channels from an **M3U playlist** or **Xtream Codes** credentials
+- **22,000+ channels** aggregated from open FTA and FAST sources (iptv-org, TDTChannels, Pluto TV, Samsung TV Plus), Spanish-language sources prioritized
+- Tabs for live, 24/7, radio, movies and series; search and category filters with channel counts
+- Users can also load their own **M3U playlist** or **Xtream Codes** credentials
 - HLS via `hls.js`, MPEG-TS via `mpegts.js`
 - Direct playback first, falling back to a server proxy only when CORS blocks the stream
 
@@ -34,6 +36,23 @@ Every streaming UI is built for one input device. A remote-driven 10-foot UI and
 **Platform**
 - Installable PWA, dark-first design
 - Responsive from phone to TV
+
+## Screens
+
+<p align="center">
+  <img src="docs/screenshots/home.jpg" alt="FilmSpace home — featured title with backdrop hero" width="860">
+</p>
+
+<table>
+  <tr>
+    <td width="62%"><img src="docs/screenshots/live.jpg" alt="Live TV — 22,238 channels with tabs and category filters"></td>
+    <td width="38%"><img src="docs/screenshots/mobile.jpg" alt="FilmSpace on mobile"></td>
+  </tr>
+  <tr>
+    <td align="center"><em>Live TV — channel grid, tabs and category counts</em></td>
+    <td align="center"><em>Same codebase on mobile</em></td>
+  </tr>
+</table>
 
 ## Stack
 
